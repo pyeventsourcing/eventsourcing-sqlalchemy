@@ -5,7 +5,7 @@ from sqlalchemy_utils.types.uuid import UUIDType
 Base = declarative_base()
 
 
-class StoredEventRecordBase(Base):
+class StoredEventRecord(Base):
     __tablename__ = "stored_events"
     __abstract__ = True
 
@@ -38,7 +38,7 @@ class StoredEventRecordBase(Base):
     )
 
 
-class SnapshotRecordBase(Base):
+class SnapshotRecord(Base):
     __tablename__ = "snapshots"
     __abstract__ = True
 
@@ -57,7 +57,7 @@ class SnapshotRecordBase(Base):
     state = Column(LargeBinary())
 
 
-class NotificationTrackingRecordBase(Base):
+class NotificationTrackingRecord(Base):
     __tablename__ = "notification_tracking"
     __abstract__ = True
 

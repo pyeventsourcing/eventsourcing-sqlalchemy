@@ -14,9 +14,9 @@ from sqlalchemy.orm import Session
 
 from eventsourcingsqlalchemy.datastore import SqlAlchemyDatastore
 from eventsourcingsqlalchemy.models import (
-    NotificationTrackingRecordBase,
-    SnapshotRecordBase,
-    StoredEventRecordBase,
+    NotificationTrackingRecord,
+    SnapshotRecord,
+    StoredEventRecord,
 )
 
 
@@ -34,9 +34,9 @@ class SqlAlchemyAggregateRecorder(AggregateRecorder):
             [s.capitalize() for s in events_table_name.rstrip("s").split("_")]
         )
         if for_snapshots:
-            base_cls = SnapshotRecordBase
+            base_cls = SnapshotRecord
         else:
-            base_cls = StoredEventRecordBase
+            base_cls = StoredEventRecord
         self.events_record_cls = self.datastore.define_record_class(
             name=record_cls_name, table_name=self.events_table_name, base_cls=base_cls
         )
@@ -151,7 +151,7 @@ class SqlAlchemyProcessRecorder(SqlAlchemyApplicationRecorder, ProcessRecorder):
         self.tracking_record_cls = self.datastore.define_record_class(
             name="NotificationTrackingRecord",
             table_name=self.tracking_table_name,
-            base_cls=NotificationTrackingRecordBase,
+            base_cls=NotificationTrackingRecord,
         )
         self.tracking_table: Table = self.tracking_record_cls.__table__
 
