@@ -21,6 +21,7 @@ environment variable `SQLALCHEMY_URL`.
 First define a domain model and application, in the usual way.
 
 ```python
+from eventsourcing.application import Application
 from eventsourcing.domain import Aggregate, event
 
 
@@ -32,8 +33,6 @@ class World(Aggregate):
     def make_it_so(self, what):
         self.history.append(what)
 
-
-from eventsourcing.application import Application
 
 class Worlds(Application):
     is_snapshotting_enabled = True
@@ -51,10 +50,10 @@ class Worlds(Application):
     def get_world_history(self, world_id):
         world = self.repository.get(world_id)
         return world.history
-
 ```
 
-Set environment variables.
+Set environment variables `INFRASTRUCTURE_FACTORY` and `SQLALCHEMY_URL`.
+See the [SQLAlchemy documentation](https://docs.sqlalchemy.org/en/14/core/engines.html) for more information about SQLAlchemy Database URLs.
 
 ```python
 import os
@@ -68,12 +67,16 @@ os.environ.update({
 Construct and use the application.
 
 ```python
+# Construct the application.
 app = Worlds()
+
+# Call application command methods.
 world_id = app.create_world()
 app.make_it_so(world_id, "dinosaurs")
 app.make_it_so(world_id, "trucks")
 app.make_it_so(world_id, "internet")
 
+# Call application query methods.
 history = app.get_world_history(world_id)
 assert history == ["dinosaurs", "trucks", "internet"]    
 ```
@@ -84,6 +87,8 @@ of stored events, set `COMPRESSOR_TOPIC` and `CIPHER_KEY`.
 
 ```python
 from eventsourcing.cipher import AESCipher
+
+
 # Generate a cipher key (keep this safe).
 cipher_key = AESCipher.create_key(num_bytes=32)
 
@@ -93,15 +98,8 @@ os.environ.update({
     "CIPHER_KEY": cipher_key,
 })
 
-# Construct and use the application.
+# Construct the application.
 app = Worlds()
-world_id = app.create_world()
-app.make_it_so(world_id, "dinosaurs")
-app.make_it_so(world_id, "trucks")
-app.make_it_so(world_id, "internet")
-
-history = app.get_world_history(world_id)
-assert history == ["dinosaurs", "trucks", "internet"]
 ```
 
 We can see the application is using the SQLAlchemy infrastructure,
