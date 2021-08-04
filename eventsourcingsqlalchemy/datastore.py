@@ -46,21 +46,6 @@ class SqlAlchemyDatastore:
                     cursor_result = connection.execute(text("PRAGMA journal_mode=WAL;"))
                     if list(cursor_result)[0][0] == "wal":
                         self.is_sqlite_wal_mode = True
-                # if ":memory:" in url or "mode=memory" in url:
-                # self.engine = create_engine(
-                #     "sqlite:///:memory:?cache=shared",
-                #     connect_args={
-                #         'check_same_thread': False,
-                #     },
-                #     poolclass=StaticPool
-                # )
-                # # self.write_lock = Lock()
-            # else:
-            #     with self.engine.connect() as connection:
-            #         cursor_result = connection.execute(text("PRAGMA journal_mode=WAL;"))
-            #         if list(cursor_result)[0][0] == "wal":
-            #             self.is_sqlite_wal_mode = True
-
         self.session_cls = sessionmaker(bind=self.engine)
 
     def transaction(self, commit: bool):
