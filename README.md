@@ -1,6 +1,6 @@
-# eventsourcing-sqlalchemy
+# Event Sourcing in Python with SQLAlchemy
 
-Python package for eventsourcing with SQLAlchemy
+This package supports using the Python [eventsourcing](https://github.com/johnbywater/eventsourcing) library with [SQLAlchemy](https://www.sqlalchemy.org/).
 
 
 ## Installation
