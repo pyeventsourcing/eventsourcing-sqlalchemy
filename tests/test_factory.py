@@ -6,8 +6,8 @@ from eventsourcing.tests.infrastructure_testcases import (
 )
 from eventsourcing.utils import get_topic
 
-from eventsourcingsqlalchemy.factory import Factory
-from eventsourcingsqlalchemy.recorders import (
+from eventsourcing_sqlalchemy.factory import Factory
+from eventsourcing_sqlalchemy.recorders import (
     SqlAlchemyAggregateRecorder,
     SqlAlchemyApplicationRecorder,
     SqlAlchemyProcessRecorder,

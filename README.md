@@ -59,7 +59,7 @@ See the [SQLAlchemy documentation](https://docs.sqlalchemy.org/en/14/core/engine
 import os
 
 os.environ.update({
-    "INFRASTRUCTURE_FACTORY": "eventsourcingsqlalchemy.factory:Factory",
+    "INFRASTRUCTURE_FACTORY": "eventsourcing_sqlalchemy.factory:Factory",
     "SQLALCHEMY_URL": "sqlite:///:memory:",
 })
 ```
@@ -107,12 +107,12 @@ and that compression and encryption are enabled, by checking the
 attributes of the application object.
 
 ```python
-from eventsourcingsqlalchemy.datastore import SqlAlchemyDatastore
-from eventsourcingsqlalchemy.factory import Factory
-from eventsourcingsqlalchemy.recorders import SqlAlchemyAggregateRecorder
-from eventsourcingsqlalchemy.recorders import SqlAlchemyApplicationRecorder
-from eventsourcingsqlalchemy.models import StoredEventRecord
-from eventsourcingsqlalchemy.models import SnapshotRecord
+from eventsourcing_sqlalchemy.datastore import SqlAlchemyDatastore
+from eventsourcing_sqlalchemy.factory import Factory
+from eventsourcing_sqlalchemy.recorders import SqlAlchemyAggregateRecorder
+from eventsourcing_sqlalchemy.recorders import SqlAlchemyApplicationRecorder
+from eventsourcing_sqlalchemy.models import StoredEventRecord
+from eventsourcing_sqlalchemy.models import SnapshotRecord
 import zlib
 
 assert isinstance(app.factory, Factory)

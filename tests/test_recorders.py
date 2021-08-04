@@ -1,7 +1,7 @@
 from eventsourcing.tests.ramdisk import tmpfile_uris
 
-from eventsourcingsqlalchemy.datastore import SqlAlchemyDatastore
-from eventsourcingsqlalchemy.recorders import (
+from eventsourcing_sqlalchemy.datastore import SqlAlchemyDatastore
+from eventsourcing_sqlalchemy.recorders import (
     SqlAlchemyAggregateRecorder,
     SqlAlchemyApplicationRecorder,
     SqlAlchemyProcessRecorder,

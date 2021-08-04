@@ -5,9 +5,9 @@ from subprocess import PIPE, Popen
 from tempfile import NamedTemporaryFile
 from unittest.case import TestCase
 
-import eventsourcingsqlalchemy
+import eventsourcing_sqlalchemy
 
-base_dir = dirname(dirname(os.path.abspath(eventsourcingsqlalchemy.__file__)))
+base_dir = dirname(dirname(os.path.abspath(eventsourcing_sqlalchemy.__file__)))
 
 
 class TestExample(TestCase):
@@ -41,7 +41,7 @@ class TestExample(TestCase):
 
         app = Worlds(
             env={
-                "INFRASTRUCTURE_FACTORY": "eventsourcingsqlalchemy.factory:Factory",
+                "INFRASTRUCTURE_FACTORY": "eventsourcing_sqlalchemy.factory:Factory",
                 "SQLALCHEMY_URL": "sqlite:///:memory:",
             }
         )

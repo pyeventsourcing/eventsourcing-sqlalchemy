@@ -12,8 +12,8 @@ from eventsourcing.persistence import (
 from sqlalchemy import Column, Table
 from sqlalchemy.orm import Session
 
-from eventsourcingsqlalchemy.datastore import SqlAlchemyDatastore
-from eventsourcingsqlalchemy.models import (
+from eventsourcing_sqlalchemy.datastore import SqlAlchemyDatastore
+from eventsourcing_sqlalchemy.models import (
     NotificationTrackingRecord,
     SnapshotRecord,
     StoredEventRecord,

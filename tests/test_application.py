@@ -8,11 +8,11 @@ from eventsourcing.tests.test_application_with_popo import (
 
 class TestApplicationWithSqlAlchemy(TestApplicationWithPOPO):
     timeit_number = 5 * TIMEIT_FACTOR
-    expected_factory_topic = "eventsourcingsqlalchemy.factory:Factory"
+    expected_factory_topic = "eventsourcing_sqlalchemy.factory:Factory"
 
     def setUp(self) -> None:
         super().setUp()
-        os.environ["INFRASTRUCTURE_FACTORY"] = "eventsourcingsqlalchemy.factory:Factory"
+        os.environ["INFRASTRUCTURE_FACTORY"] = "eventsourcing_sqlalchemy.factory:Factory"
         os.environ["SQLALCHEMY_URL"] = "sqlite:///:memory:"
 
     def tearDown(self) -> None:
