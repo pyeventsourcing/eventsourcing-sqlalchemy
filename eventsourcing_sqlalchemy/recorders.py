@@ -57,18 +57,9 @@ class SqlAlchemyAggregateRecorder(AggregateRecorder):
     def _insert_events(
         self, session: Session, stored_events: List[StoredEvent], **kwargs
     ):
-        # print("Inserting", len(stored_events), "stored events")
-        # session.bulk_insert_mappings(
-        #     mapper=self.events_record_cls, mappings=[e.__dict__ for e in stored_events]
-        # )
-        for stored_event in stored_events:
-            record = self.events_record_cls(
-                originator_id=stored_event.originator_id,
-                originator_version=stored_event.originator_version,
-                topic=stored_event.topic,
-                state=stored_event.state,
-            )
-            session.add(record)
+        session.bulk_insert_mappings(
+            mapper=self.events_record_cls, mappings=[e.__dict__ for e in stored_events]
+        )
 
     def select_events(
         self,
