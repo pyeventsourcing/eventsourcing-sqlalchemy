@@ -7,8 +7,6 @@ from eventsourcing.tests.test_application_with_popo import (
 )
 from eventsourcing.tests.test_postgres import drop_postgres_table
 
-from eventsourcing_sqlalchemy.datastore import SqlAlchemyDatastore
-
 
 class TestApplicationWithSqlAlchemy(TestApplicationWithPOPO):
     timeit_number = 5 * TIMEIT_FACTOR
@@ -41,15 +39,15 @@ class TestWithPostgres(TestApplicationWithSqlAlchemy):
         super().tearDown()
 
     def drop_tables(self):
-        datasource = PostgresDatastore(
+        datastore = PostgresDatastore(
             dbname="eventsourcing_sqlalchemy",
             host="127.0.0.1",
             port="5432",
             user="eventsourcing",
             password="eventsourcing",
         )
-        drop_postgres_table(datasource, "bankaccounts_events")
-        drop_postgres_table(datasource, "bankaccounts_events")
+        drop_postgres_table(datastore, "bankaccounts_events")
+        drop_postgres_table(datastore, "bankaccounts_events")
 
 
 del TestApplicationWithPOPO
