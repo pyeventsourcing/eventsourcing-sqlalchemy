@@ -8,11 +8,11 @@ from eventsourcing.persistence import (
     ProcessRecorder,
 )
 
-from eventsourcing_sqlalchemy.datastore import SqlAlchemyDatastore
+from eventsourcing_sqlalchemy.datastore import SQLAlchemyDatastore
 from eventsourcing_sqlalchemy.recorders import (
-    SqlAlchemyAggregateRecorder,
-    SqlAlchemyApplicationRecorder,
-    SqlAlchemyProcessRecorder,
+    SQLAlchemyAggregateRecorder,
+    SQLAlchemyApplicationRecorder,
+    SQLAlchemyProcessRecorder,
 )
 
 
@@ -25,11 +25,11 @@ class Factory(InfrastructureFactory):
         db_url = self.getenv(self.SQLALCHEMY_URL)
         if db_url is None:
             raise EnvironmentError(
-                "SqlAlchemy URL not found "
+                "SQLAlchemy URL not found "
                 "in environment with key "
                 f"'{self.SQLALCHEMY_URL}'"
             )
-        self.datastore = SqlAlchemyDatastore(
+        self.datastore = SQLAlchemyDatastore(
             url=db_url
         )
 
@@ -37,7 +37,7 @@ class Factory(InfrastructureFactory):
         prefix = self.application_name.lower() or "stored"
         events_table_name = prefix + "_" + purpose
         for_snapshots = purpose == "snapshots"
-        recorder = SqlAlchemyAggregateRecorder(
+        recorder = SQLAlchemyAggregateRecorder(
             datastore=self.datastore, events_table_name=events_table_name, for_snapshots=for_snapshots
         )
         if self.env_create_table():
@@ -47,7 +47,7 @@ class Factory(InfrastructureFactory):
     def application_recorder(self) -> ApplicationRecorder:
         prefix = self.application_name.lower() or "stored"
         events_table_name = prefix + "_events"
-        recorder = SqlAlchemyApplicationRecorder(
+        recorder = SQLAlchemyApplicationRecorder(
             datastore=self.datastore, events_table_name=events_table_name
         )
         if self.env_create_table():
@@ -59,7 +59,7 @@ class Factory(InfrastructureFactory):
         events_table_name = prefix + "_events"
         prefix = self.application_name.lower() or "notification"
         tracking_table_name = prefix + "_tracking"
-        recorder = SqlAlchemyProcessRecorder(
+        recorder = SQLAlchemyProcessRecorder(
             datastore=self.datastore,
             events_table_name=events_table_name,
             tracking_table_name=tracking_table_name,

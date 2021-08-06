@@ -8,7 +8,7 @@ from eventsourcing.tests.test_application_with_popo import (
 from eventsourcing.tests.test_postgres import drop_postgres_table
 
 
-class TestApplicationWithSqlAlchemy(TestApplicationWithPOPO):
+class TestApplicationWithSQLAlchemy(TestApplicationWithPOPO):
     timeit_number = 5 * TIMEIT_FACTOR
     expected_factory_topic = "eventsourcing_sqlalchemy.factory:Factory"
     sqlalchemy_database_url = "sqlite:///:memory:"
@@ -24,7 +24,7 @@ class TestApplicationWithSqlAlchemy(TestApplicationWithPOPO):
         super().tearDown()
 
 
-class TestWithPostgres(TestApplicationWithSqlAlchemy):
+class TestWithPostgres(TestApplicationWithSQLAlchemy):
     timeit_number = 500 * TIMEIT_FACTOR
     sqlalchemy_database_url = (
         "postgresql://eventsourcing:eventsourcing@localhost:5432/eventsourcing_sqlalchemy"

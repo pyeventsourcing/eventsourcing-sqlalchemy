@@ -20,7 +20,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 
-class SqlAlchemyDatastore:
+class SQLAlchemyDatastore:
     record_classes = {}
 
     def __init__(self, url: str, **kwargs):

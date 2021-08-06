@@ -12,7 +12,7 @@ from eventsourcing.persistence import (
 from sqlalchemy import Column, Table
 from sqlalchemy.orm import Session
 
-from eventsourcing_sqlalchemy.datastore import SqlAlchemyDatastore
+from eventsourcing_sqlalchemy.datastore import SQLAlchemyDatastore
 from eventsourcing_sqlalchemy.models import (
     NotificationTrackingRecord,
     SnapshotRecord,
@@ -20,10 +20,10 @@ from eventsourcing_sqlalchemy.models import (
 )
 
 
-class SqlAlchemyAggregateRecorder(AggregateRecorder):
+class SQLAlchemyAggregateRecorder(AggregateRecorder):
     def __init__(
         self,
-        datastore: SqlAlchemyDatastore,
+        datastore: SQLAlchemyDatastore,
         events_table_name: str,
         for_snapshots: bool = False,
     ):
@@ -100,7 +100,7 @@ class SqlAlchemyAggregateRecorder(AggregateRecorder):
         return stored_events
 
 
-class SqlAlchemyApplicationRecorder(SqlAlchemyAggregateRecorder, ApplicationRecorder):
+class SQLAlchemyApplicationRecorder(SQLAlchemyAggregateRecorder, ApplicationRecorder):
     def max_notification_id(self) -> int:
         with self.datastore.transaction(commit=False) as session:
             q = session.query(self.events_record_cls)
@@ -135,10 +135,10 @@ class SqlAlchemyApplicationRecorder(SqlAlchemyAggregateRecorder, ApplicationReco
         return notifications
 
 
-class SqlAlchemyProcessRecorder(SqlAlchemyApplicationRecorder, ProcessRecorder):
+class SQLAlchemyProcessRecorder(SQLAlchemyApplicationRecorder, ProcessRecorder):
     def __init__(
         self,
-        datastore: SqlAlchemyDatastore,
+        datastore: SQLAlchemyDatastore,
         events_table_name: str,
         tracking_table_name: str,
     ):
@@ -158,7 +158,7 @@ class SqlAlchemyProcessRecorder(SqlAlchemyApplicationRecorder, ProcessRecorder):
     def _insert_events(
         self, session: Session, stored_events: List[StoredEvent], **kwargs
     ):
-        super(SqlAlchemyProcessRecorder, self)._insert_events(
+        super(SQLAlchemyProcessRecorder, self)._insert_events(
             session, stored_events, **kwargs
         )
         tracking: Optional[Tracking] = kwargs.get("tracking", None)

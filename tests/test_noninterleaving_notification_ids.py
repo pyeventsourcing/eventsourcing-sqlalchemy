@@ -5,8 +5,8 @@ from eventsourcing.tests.noninterleaving_notification_ids_testcase import (
 from eventsourcing.tests.ramdisk import tmpfile_uris
 from eventsourcing.tests.test_postgres import drop_postgres_table
 
-from eventsourcing_sqlalchemy.datastore import SqlAlchemyDatastore
-from eventsourcing_sqlalchemy.recorders import SqlAlchemyApplicationRecorder
+from eventsourcing_sqlalchemy.datastore import SQLAlchemyDatastore
+from eventsourcing_sqlalchemy.recorders import SQLAlchemyApplicationRecorder
 
 
 class TestNonInterleaving(NonInterleavingNotificationIDsBaseCase):
@@ -14,10 +14,10 @@ class TestNonInterleaving(NonInterleavingNotificationIDsBaseCase):
 
     def setUp(self) -> None:
         super().setUp()
-        self.datastore = SqlAlchemyDatastore(self.sqlalchemy_db_url)
+        self.datastore = SQLAlchemyDatastore(self.sqlalchemy_db_url)
 
     def create_recorder(self):
-        recorder = SqlAlchemyApplicationRecorder(
+        recorder = SQLAlchemyApplicationRecorder(
             datastore=self.datastore,
             events_table_name="stored_events"
         )

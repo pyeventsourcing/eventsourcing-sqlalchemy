@@ -107,18 +107,18 @@ and that compression and encryption are enabled, by checking the
 attributes of the application object.
 
 ```python
-from eventsourcing_sqlalchemy.datastore import SqlAlchemyDatastore
+from eventsourcing_sqlalchemy.datastore import SQLAlchemyDatastore
 from eventsourcing_sqlalchemy.factory import Factory
-from eventsourcing_sqlalchemy.recorders import SqlAlchemyAggregateRecorder
-from eventsourcing_sqlalchemy.recorders import SqlAlchemyApplicationRecorder
+from eventsourcing_sqlalchemy.recorders import SQLAlchemyAggregateRecorder
+from eventsourcing_sqlalchemy.recorders import SQLAlchemyApplicationRecorder
 from eventsourcing_sqlalchemy.models import StoredEventRecord
 from eventsourcing_sqlalchemy.models import SnapshotRecord
 import zlib
 
 assert isinstance(app.factory, Factory)
-assert isinstance(app.factory.datastore, SqlAlchemyDatastore)
-assert isinstance(app.events.recorder, SqlAlchemyApplicationRecorder)
-assert isinstance(app.snapshots.recorder, SqlAlchemyAggregateRecorder)
+assert isinstance(app.factory.datastore, SQLAlchemyDatastore)
+assert isinstance(app.events.recorder, SQLAlchemyApplicationRecorder)
+assert isinstance(app.snapshots.recorder, SQLAlchemyAggregateRecorder)
 assert issubclass(app.events.recorder.events_record_cls, StoredEventRecord)
 assert issubclass(app.snapshots.recorder.events_record_cls, SnapshotRecord)
 assert isinstance(app.mapper.cipher, AESCipher)

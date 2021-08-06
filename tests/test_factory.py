@@ -8,9 +8,9 @@ from eventsourcing.utils import get_topic
 
 from eventsourcing_sqlalchemy.factory import Factory
 from eventsourcing_sqlalchemy.recorders import (
-    SqlAlchemyAggregateRecorder,
-    SqlAlchemyApplicationRecorder,
-    SqlAlchemyProcessRecorder,
+    SQLAlchemyAggregateRecorder,
+    SQLAlchemyApplicationRecorder,
+    SQLAlchemyProcessRecorder,
 )
 
 
@@ -22,13 +22,13 @@ class TestFactory(InfrastructureFactoryTestCase):
         return Factory
 
     def expected_aggregate_recorder_class(self):
-        return SqlAlchemyAggregateRecorder
+        return SQLAlchemyAggregateRecorder
 
     def expected_application_recorder_class(self):
-        return SqlAlchemyApplicationRecorder
+        return SQLAlchemyApplicationRecorder
 
     def expected_process_recorder_class(self):
-        return SqlAlchemyProcessRecorder
+        return SQLAlchemyProcessRecorder
 
     def setUp(self) -> None:
         os.environ[InfrastructureFactory.TOPIC] = get_topic(Factory)

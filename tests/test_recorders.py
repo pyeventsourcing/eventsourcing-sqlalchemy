@@ -1,10 +1,10 @@
 from eventsourcing.tests.ramdisk import tmpfile_uris
 
-from eventsourcing_sqlalchemy.datastore import SqlAlchemyDatastore
+from eventsourcing_sqlalchemy.datastore import SQLAlchemyDatastore
 from eventsourcing_sqlalchemy.recorders import (
-    SqlAlchemyAggregateRecorder,
-    SqlAlchemyApplicationRecorder,
-    SqlAlchemyProcessRecorder,
+    SQLAlchemyAggregateRecorder,
+    SQLAlchemyApplicationRecorder,
+    SQLAlchemyProcessRecorder,
 )
 
 
@@ -17,39 +17,39 @@ from eventsourcing.tests.applicationrecorder_testcase import (
 from eventsourcing.tests.processrecorder_testcase import ProcessRecorderTestCase
 
 
-class TestSqlAlchemyAggregateRecorder(AggregateRecorderTestCase):
+class TestSQLAlchemyAggregateRecorder(AggregateRecorderTestCase):
     def setUp(self) -> None:
-        self.datastore = SqlAlchemyDatastore("sqlite:///:memory:")
+        self.datastore = SQLAlchemyDatastore("sqlite:///:memory:")
 
     def create_recorder(self):
-        recorder = SqlAlchemyAggregateRecorder(
+        recorder = SQLAlchemyAggregateRecorder(
             datastore=self.datastore, events_table_name="stored_events"
         )
         recorder.create_table()
         return recorder
 
     def test_insert_and_select(self):
-        super(TestSqlAlchemyAggregateRecorder, self).test_insert_and_select()
+        super(TestSQLAlchemyAggregateRecorder, self).test_insert_and_select()
 
 
-class TestSqlAlchemySnapshotRecorder(AggregateRecorderTestCase):
+class TestSQLAlchemySnapshotRecorder(AggregateRecorderTestCase):
     def setUp(self) -> None:
-        self.datastore = SqlAlchemyDatastore("sqlite:///:memory:")
+        self.datastore = SQLAlchemyDatastore("sqlite:///:memory:")
 
     def create_recorder(self):
-        recorder = SqlAlchemyAggregateRecorder(
+        recorder = SQLAlchemyAggregateRecorder(
             datastore=self.datastore, events_table_name="snapshots", for_snapshots=True
         )
         recorder.create_table()
         return recorder
 
 
-class TestSqlAlchemyApplicationRecorder(ApplicationRecorderTestCase):
+class TestSQLAlchemyApplicationRecorder(ApplicationRecorderTestCase):
     def setUp(self) -> None:
-        self.datastore = SqlAlchemyDatastore("sqlite:///:memory:?cache=shared")
+        self.datastore = SQLAlchemyDatastore("sqlite:///:memory:?cache=shared")
 
     def create_recorder(self):
-        recorder = SqlAlchemyApplicationRecorder(
+        recorder = SQLAlchemyApplicationRecorder(
             datastore=self.datastore, events_table_name="stored_events"
         )
         recorder.create_table()
@@ -63,7 +63,7 @@ class TestSqlAlchemyApplicationRecorder(ApplicationRecorderTestCase):
         db_uri = next(uris)
         db_uri = db_uri.lstrip("file:")
         db_url = f"sqlite:///{db_uri}"
-        self.datastore = SqlAlchemyDatastore(url=db_url)
+        self.datastore = SQLAlchemyDatastore(url=db_url)
         self.assertTrue(self.datastore.is_sqlite_wal_mode)
         self.assertFalse(self.datastore.access_lock)
         super().test_concurrent_no_conflicts()
@@ -74,12 +74,12 @@ class TestSqlAlchemyApplicationRecorder(ApplicationRecorderTestCase):
         super().test_concurrent_no_conflicts()
 
 
-class TestSqlAlchemyProcessRecorder(ProcessRecorderTestCase):
+class TestSQLAlchemyProcessRecorder(ProcessRecorderTestCase):
     def setUp(self) -> None:
-        self.datastore = SqlAlchemyDatastore("sqlite:///:memory:")
+        self.datastore = SQLAlchemyDatastore("sqlite:///:memory:")
 
     def create_recorder(self):
-        recorder = SqlAlchemyProcessRecorder(datastore=self.datastore, events_table_name="stored_events",
+        recorder = SQLAlchemyProcessRecorder(datastore=self.datastore, events_table_name="stored_events",
                                              tracking_table_name="tracking", )
         recorder.create_table()
         return recorder
