@@ -124,3 +124,7 @@ assert issubclass(app.snapshots.recorder.events_record_cls, SnapshotRecord)
 assert isinstance(app.mapper.cipher, AESCipher)
 assert app.mapper.compressor == zlib
 ```
+
+For more information, please refer to the Python
+[eventsourcing](https://github.com/johnbywater/eventsourcing) library
+and the [SQLAlchemy](https://www.sqlalchemy.org/) project.
