@@ -25,7 +25,7 @@ class TestApplicationWithSQLAlchemy(TestApplicationWithPOPO):
 
 
 class TestWithPostgres(TestApplicationWithSQLAlchemy):
-    timeit_number = 500 * TIMEIT_FACTOR
+    timeit_number = 50 * TIMEIT_FACTOR
     sqlalchemy_database_url = (
         "postgresql://eventsourcing:eventsourcing@localhost:5432/eventsourcing_sqlalchemy"
     )
