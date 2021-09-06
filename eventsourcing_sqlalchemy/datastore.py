@@ -19,14 +19,38 @@ from sqlalchemy.future import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from eventsourcing_sqlalchemy.models import (
+    NotificationTrackingRecord,
+    SnapshotRecord,
+    StoredEventRecord,
+)
+
 
 class SQLAlchemyDatastore:
     record_classes = {}
 
-    def __init__(self, url: str, **kwargs):
+    def __init__(self, **kwargs):
         kwargs = dict(kwargs)
-        self.is_sqlite_in_memory_db = False
-        self.access_lock: Optional[Lock] = None
+        self.access_lock: Optional[Lock] = kwargs.get("access_lock") or None
+        self.is_sqlite_in_memory_db = kwargs.get("is_sqlite_in_memory_db") or False
+        self._init_session(kwargs)
+        self._init_sqlite_wal_mode()
+        self._init_record_cls(kwargs)
+
+    def _init_session(self, kwargs: dict):
+        url = kwargs.get("url") or None
+        session_cls = kwargs.get("session_cls") or None
+        if not url and not session_cls:
+            raise EnvironmentError(
+                "SQLAlchemy Datastore must be created with url or session_cls param"
+            )
+        if url:
+            return self._init_session_with_url(kwargs)
+        if session_cls:
+            return self._init_session_with_session_cls(session_cls)
+
+    def _init_session_with_url(self, kwargs: dict):
+        url = kwargs.get("url")
         if url.startswith("sqlite"):
             if ":memory:" in url or "mode=memory" in url:
                 self.is_sqlite_in_memory_db = True
@@ -38,15 +62,32 @@ class SQLAlchemyDatastore:
                     kwargs["poolclass"] = StaticPool
                 self.access_lock = Lock()
 
-        self.engine = create_engine(url, echo=False, **kwargs)
-        self.is_sqlite_wal_mode = False
-        if self.engine.dialect.name == "sqlite":
-            if not self.is_sqlite_in_memory_db:
-                with self.engine.connect() as connection:
-                    cursor_result = connection.execute(text("PRAGMA journal_mode=WAL;"))
-                    if list(cursor_result)[0][0] == "wal":
-                        self.is_sqlite_wal_mode = True
+        self.engine = create_engine(echo=False, **kwargs)
         self.session_cls = sessionmaker(bind=self.engine)
+
+    def _init_session_with_session_cls(self, session_cls):
+        self.session_cls = session_cls
+        self.engine = session_cls().get_bind()
+
+    def _init_sqlite_wal_mode(self):
+        self.is_sqlite_wal_mode = False
+        if self.engine.dialect.name != "sqlite":
+            return
+        if self.is_sqlite_in_memory_db:
+            return
+        with self.engine.connect() as connection:
+            cursor_result = connection.execute(text("PRAGMA journal_mode=WAL;"))
+            if list(cursor_result)[0][0] == "wal":
+                self.is_sqlite_wal_mode = True
+
+    def _init_record_cls(self, kwargs: dict):
+        self.snapshot_record_cls = kwargs.get("snapshot_record_cls") or SnapshotRecord
+        self.stored_event_record_cls = (
+            kwargs.get("stored_event_record_cls") or StoredEventRecord
+        )
+        self.notification_tracking_record_cls = (
+            kwargs.get("notification_tracking_record_cls") or NotificationTrackingRecord
+        )
 
     def transaction(self, commit: bool):
         if self.access_lock:
