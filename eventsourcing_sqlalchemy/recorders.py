@@ -172,6 +172,7 @@ class SQLAlchemyProcessRecorder(SQLAlchemyApplicationRecorder, ProcessRecorder):
     def max_tracking_id(self, application_name: str) -> int:
         with self.datastore.transaction(commit=False) as session:
             q = session.query(self.tracking_record_cls)
+            q = q.filter(self.tracking_record_cls.application_name == application_name)
             notification_id: Column = self.tracking_record_cls.notification_id
             q = q.order_by(notification_id.desc())
             try:

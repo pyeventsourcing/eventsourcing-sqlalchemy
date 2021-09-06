@@ -1,3 +1,6 @@
+from uuid import uuid4
+
+from eventsourcing.persistence import StoredEvent, Tracking
 from eventsourcing.tests.ramdisk import tmpfile_uris
 
 from eventsourcing_sqlalchemy.datastore import SQLAlchemyDatastore
@@ -86,6 +89,46 @@ class TestSQLAlchemyProcessRecorder(ProcessRecorderTestCase):
 
     def test_performance(self):
         super().test_performance()
+
+    def test_max_tracking_id_query_should_be_filtered_by_application_name(self):
+        recorder = self.create_recorder()
+        self.assertEqual(
+            recorder.max_tracking_id("upstream_app1"),
+            0,
+        )
+        self.assertEqual(
+            recorder.max_tracking_id("upstream_app2"),
+            0,
+        )
+
+        originator_id1 = uuid4()
+
+        stored_event1 = StoredEvent(
+            originator_id=originator_id1,
+            originator_version=1,
+            topic="topic1",
+            state=b"state1",
+        )
+        tracking1 = Tracking(
+            application_name="upstream_app1",
+            notification_id=1,
+        )
+
+        recorder.insert_events(
+            stored_events=[
+                stored_event1,
+            ],
+            tracking=tracking1,
+        )
+
+        self.assertEqual(
+            recorder.max_tracking_id("upstream_app1"),
+            1,
+        )
+        self.assertEqual(
+            recorder.max_tracking_id("upstream_app2"),
+            0,
+        )
 
 
 del AggregateRecorderTestCase
