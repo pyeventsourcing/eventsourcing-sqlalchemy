@@ -50,6 +50,7 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
+junit.xml
 
 # Translations
 *.mo
@@ -127,3 +128,8 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# PyCharm IDE
+/.idea/
+
+*.sqlite3*
