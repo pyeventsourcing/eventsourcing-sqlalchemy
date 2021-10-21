@@ -1,4 +1,9 @@
+from uuid import uuid4
+
+from eventsourcing.persistence import StoredEvent, Tracking
 from eventsourcing.tests.ramdisk import tmpfile_uris
+from sqlalchemy.future import create_engine
+from sqlalchemy.orm import sessionmaker
 
 from eventsourcing_sqlalchemy.datastore import SQLAlchemyDatastore
 from eventsourcing_sqlalchemy.recorders import (
@@ -19,7 +24,7 @@ from eventsourcing.tests.processrecorder_testcase import ProcessRecorderTestCase
 
 class TestSQLAlchemyAggregateRecorder(AggregateRecorderTestCase):
     def setUp(self) -> None:
-        self.datastore = SQLAlchemyDatastore("sqlite:///:memory:")
+        self.datastore = SQLAlchemyDatastore(url="sqlite:///:memory:")
 
     def create_recorder(self):
         recorder = SQLAlchemyAggregateRecorder(
@@ -31,10 +36,24 @@ class TestSQLAlchemyAggregateRecorder(AggregateRecorderTestCase):
     def test_insert_and_select(self):
         super(TestSQLAlchemyAggregateRecorder, self).test_insert_and_select()
 
+class TestSQLAlchemyAggregateRecorderWithExternalSession(AggregateRecorderTestCase):
+    def setUp(self) -> None:
+        session_cls = sessionmaker(bind=create_engine(url="sqlite:///:memory:"))
+        self.datastore = SQLAlchemyDatastore(session_cls=session_cls)
+
+    def create_recorder(self):
+        recorder = SQLAlchemyAggregateRecorder(
+            datastore=self.datastore, events_table_name="stored_events"
+        )
+        recorder.create_table()
+        return recorder
+
+    def test_insert_and_select(self):
+        super(TestSQLAlchemyAggregateRecorderWithExternalSession, self).test_insert_and_select()
 
 class TestSQLAlchemySnapshotRecorder(AggregateRecorderTestCase):
     def setUp(self) -> None:
-        self.datastore = SQLAlchemyDatastore("sqlite:///:memory:")
+        self.datastore = SQLAlchemyDatastore(url="sqlite:///:memory:")
 
     def create_recorder(self):
         recorder = SQLAlchemyAggregateRecorder(
@@ -46,7 +65,7 @@ class TestSQLAlchemySnapshotRecorder(AggregateRecorderTestCase):
 
 class TestSQLAlchemyApplicationRecorder(ApplicationRecorderTestCase):
     def setUp(self) -> None:
-        self.datastore = SQLAlchemyDatastore("sqlite:///:memory:?cache=shared")
+        self.datastore = SQLAlchemyDatastore(url="sqlite:///:memory:?cache=shared")
 
     def create_recorder(self):
         recorder = SQLAlchemyApplicationRecorder(
@@ -76,7 +95,7 @@ class TestSQLAlchemyApplicationRecorder(ApplicationRecorderTestCase):
 
 class TestSQLAlchemyProcessRecorder(ProcessRecorderTestCase):
     def setUp(self) -> None:
-        self.datastore = SQLAlchemyDatastore("sqlite:///:memory:")
+        self.datastore = SQLAlchemyDatastore(url="sqlite:///:memory:")
 
     def create_recorder(self):
         recorder = SQLAlchemyProcessRecorder(
@@ -89,6 +108,46 @@ class TestSQLAlchemyProcessRecorder(ProcessRecorderTestCase):
 
     def test_performance(self):
         super().test_performance()
+
+    def test_max_tracking_id_query_should_be_filtered_by_application_name(self):
+        recorder = self.create_recorder()
+        self.assertEqual(
+            recorder.max_tracking_id("upstream_app1"),
+            0,
+        )
+        self.assertEqual(
+            recorder.max_tracking_id("upstream_app2"),
+            0,
+        )
+
+        originator_id1 = uuid4()
+
+        stored_event1 = StoredEvent(
+            originator_id=originator_id1,
+            originator_version=1,
+            topic="topic1",
+            state=b"state1",
+        )
+        tracking1 = Tracking(
+            application_name="upstream_app1",
+            notification_id=1,
+        )
+
+        recorder.insert_events(
+            stored_events=[
+                stored_event1,
+            ],
+            tracking=tracking1,
+        )
+
+        self.assertEqual(
+            recorder.max_tracking_id("upstream_app1"),
+            1,
+        )
+        self.assertEqual(
+            recorder.max_tracking_id("upstream_app2"),
+            0,
+        )
 
 
 del AggregateRecorderTestCase

@@ -13,11 +13,6 @@ from sqlalchemy import Column, Table
 from sqlalchemy.orm import Session
 
 from eventsourcing_sqlalchemy.datastore import SQLAlchemyDatastore
-from eventsourcing_sqlalchemy.models import (
-    NotificationTrackingRecord,
-    SnapshotRecord,
-    StoredEventRecord,
-)
 
 
 class SQLAlchemyAggregateRecorder(AggregateRecorder):
@@ -34,9 +29,9 @@ class SQLAlchemyAggregateRecorder(AggregateRecorder):
             [s.capitalize() for s in events_table_name.rstrip("s").split("_")]
         )
         if for_snapshots:
-            base_cls = SnapshotRecord
+            base_cls = self.datastore.snapshot_record_cls
         else:
-            base_cls = StoredEventRecord
+            base_cls = self.datastore.stored_event_record_cls
         self.events_record_cls = self.datastore.define_record_class(
             name=record_cls_name, table_name=self.events_table_name, base_cls=base_cls
         )
@@ -148,7 +143,7 @@ class SQLAlchemyProcessRecorder(SQLAlchemyApplicationRecorder, ProcessRecorder):
         self.tracking_record_cls = self.datastore.define_record_class(
             name="NotificationTrackingRecord",
             table_name=self.tracking_table_name,
-            base_cls=NotificationTrackingRecord,
+            base_cls=datastore.notification_tracking_record_cls,
         )
         self.tracking_table: Table = self.tracking_record_cls.__table__
 
@@ -173,6 +168,7 @@ class SQLAlchemyProcessRecorder(SQLAlchemyApplicationRecorder, ProcessRecorder):
     def max_tracking_id(self, application_name: str) -> int:
         with self.datastore.transaction(commit=False) as session:
             q = session.query(self.tracking_record_cls)
+            q = q.filter(self.tracking_record_cls.application_name == application_name)
             notification_id: Column = self.tracking_record_cls.notification_id
             q = q.order_by(notification_id.desc())
             try:

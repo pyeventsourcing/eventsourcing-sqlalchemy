@@ -14,7 +14,7 @@ class TestNonInterleaving(NonInterleavingNotificationIDsBaseCase):
 
     def setUp(self) -> None:
         super().setUp()
-        self.datastore = SQLAlchemyDatastore(self.sqlalchemy_db_url)
+        self.datastore = SQLAlchemyDatastore(url=self.sqlalchemy_db_url)
 
     def create_recorder(self):
         recorder = SQLAlchemyApplicationRecorder(
