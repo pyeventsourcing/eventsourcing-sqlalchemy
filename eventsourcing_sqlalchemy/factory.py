@@ -1,4 +1,4 @@
-from distutils.util import strtobool
+# -*- coding: utf-8 -*-
 from typing import Mapping
 
 from eventsourcing.persistence import (
@@ -7,6 +7,7 @@ from eventsourcing.persistence import (
     InfrastructureFactory,
     ProcessRecorder,
 )
+from eventsourcing.utils import strtobool
 
 from eventsourcing_sqlalchemy.datastore import SQLAlchemyDatastore
 from eventsourcing_sqlalchemy.recorders import (
@@ -20,7 +21,7 @@ class Factory(InfrastructureFactory):
     SQLALCHEMY_URL = "SQLALCHEMY_URL"
     CREATE_TABLE = "CREATE_TABLE"
 
-    def __init__(self, application_name: str, env: Mapping):
+    def __init__(self, application_name: str, env: Mapping[str, str]):
         super().__init__(application_name, env)
         db_url = self.getenv(self.SQLALCHEMY_URL)
         if db_url is None:
