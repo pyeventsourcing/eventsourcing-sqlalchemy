@@ -11,16 +11,16 @@ class StoredEventRecord(Base):
 
     # Notification ID.
     id = Column(
-        BigInteger().with_variant(Integer, "sqlite"), primary_key=True, autoincrement=True
+        BigInteger().with_variant(Integer, "sqlite"),
+        primary_key=True,
+        autoincrement=True,
     )
 
     # Originator ID (e.g. an entity or aggregate ID).
     originator_id = Column(UUIDType())
 
     # Originator version of item in sequence.
-    originator_version = Column(
-        BigInteger().with_variant(Integer, "sqlite")
-    )
+    originator_version = Column(BigInteger().with_variant(Integer, "sqlite"))
 
     # Topic of the item (e.g. path to domain event class).
     topic = Column(Text(), nullable=False)

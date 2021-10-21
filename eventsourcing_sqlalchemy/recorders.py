@@ -47,19 +47,20 @@ class SQLAlchemyAggregateRecorder(AggregateRecorder):
 
     def insert_events(self, stored_events: List[StoredEvent], **kwargs: Any) -> None:
         with self.datastore.transaction(commit=True) as session:
-            self._lock_table(session)
             self._insert_events(session, stored_events, **kwargs)
-
-    def _lock_table(self, session: Session):
-        if self.datastore.engine.dialect.name == "postgresql":
-            session.execute(f"LOCK TABLE {self.events_table_name} IN EXCLUSIVE MODE")
 
     def _insert_events(
         self, session: Session, stored_events: List[StoredEvent], **kwargs
     ):
-        session.bulk_insert_mappings(
-            mapper=self.events_record_cls, mappings=[e.__dict__ for e in stored_events]
-        )
+        if len(stored_events) == 0:
+            return
+        mappings = [e.__dict__ for e in stored_events]
+        self._lock_table(session)
+        session.bulk_insert_mappings(mapper=self.events_record_cls, mappings=mappings)
+
+    def _lock_table(self, session: Session):
+        if self.datastore.engine.dialect.name == "postgresql":
+            session.execute(f"LOCK TABLE {self.events_table_name} IN EXCLUSIVE MODE")
 
     def select_events(
         self,

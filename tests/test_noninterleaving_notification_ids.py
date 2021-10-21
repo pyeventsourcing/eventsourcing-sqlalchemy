@@ -18,8 +18,7 @@ class TestNonInterleaving(NonInterleavingNotificationIDsBaseCase):
 
     def create_recorder(self):
         recorder = SQLAlchemyApplicationRecorder(
-            datastore=self.datastore,
-            events_table_name="stored_events"
+            datastore=self.datastore, events_table_name="stored_events"
         )
         recorder.create_table()
         return recorder
@@ -38,9 +37,7 @@ class TestNonInterleavingSQLiteFileDB(TestNonInterleaving):
 
 class TestNonInterleavingPostgres(TestNonInterleaving):
     insert_num = 5000
-    sqlalchemy_db_url = (
-        "postgresql://eventsourcing:eventsourcing@localhost:5432/eventsourcing_sqlalchemy"
-    )
+    sqlalchemy_db_url = "postgresql://eventsourcing:eventsourcing@localhost:5432/eventsourcing_sqlalchemy"
 
     def setUp(self) -> None:
         super().setUp()

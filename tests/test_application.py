@@ -9,13 +9,15 @@ from eventsourcing.tests.test_postgres import drop_postgres_table
 
 
 class TestApplicationWithSQLAlchemy(TestApplicationWithPOPO):
-    timeit_number = 5 * TIMEIT_FACTOR
+    timeit_number = 30 * TIMEIT_FACTOR
     expected_factory_topic = "eventsourcing_sqlalchemy.factory:Factory"
     sqlalchemy_database_url = "sqlite:///:memory:"
 
     def setUp(self) -> None:
         super().setUp()
-        os.environ["INFRASTRUCTURE_FACTORY"] = "eventsourcing_sqlalchemy.factory:Factory"
+        os.environ[
+            "INFRASTRUCTURE_FACTORY"
+        ] = "eventsourcing_sqlalchemy.factory:Factory"
         os.environ["SQLALCHEMY_URL"] = self.sqlalchemy_database_url
 
     def tearDown(self) -> None:
@@ -25,10 +27,8 @@ class TestApplicationWithSQLAlchemy(TestApplicationWithPOPO):
 
 
 class TestWithPostgres(TestApplicationWithSQLAlchemy):
-    timeit_number = 50 * TIMEIT_FACTOR
-    sqlalchemy_database_url = (
-        "postgresql://eventsourcing:eventsourcing@localhost:5432/eventsourcing_sqlalchemy"
-    )
+    timeit_number = 5 * TIMEIT_FACTOR
+    sqlalchemy_database_url = "postgresql://eventsourcing:eventsourcing@localhost:5432/eventsourcing_sqlalchemy"
 
     def setUp(self) -> None:
         super().setUp()

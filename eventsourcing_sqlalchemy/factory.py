@@ -29,16 +29,16 @@ class Factory(InfrastructureFactory):
                 "in environment with key "
                 f"'{self.SQLALCHEMY_URL}'"
             )
-        self.datastore = SQLAlchemyDatastore(
-            url=db_url
-        )
+        self.datastore = SQLAlchemyDatastore(url=db_url)
 
     def aggregate_recorder(self, purpose: str = "events") -> AggregateRecorder:
         prefix = self.application_name.lower() or "stored"
         events_table_name = prefix + "_" + purpose
         for_snapshots = purpose == "snapshots"
         recorder = SQLAlchemyAggregateRecorder(
-            datastore=self.datastore, events_table_name=events_table_name, for_snapshots=for_snapshots
+            datastore=self.datastore,
+            events_table_name=events_table_name,
+            for_snapshots=for_snapshots,
         )
         if self.env_create_table():
             recorder.create_table()

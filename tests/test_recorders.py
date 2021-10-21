@@ -79,8 +79,11 @@ class TestSQLAlchemyProcessRecorder(ProcessRecorderTestCase):
         self.datastore = SQLAlchemyDatastore("sqlite:///:memory:")
 
     def create_recorder(self):
-        recorder = SQLAlchemyProcessRecorder(datastore=self.datastore, events_table_name="stored_events",
-                                             tracking_table_name="tracking", )
+        recorder = SQLAlchemyProcessRecorder(
+            datastore=self.datastore,
+            events_table_name="stored_events",
+            tracking_table_name="tracking",
+        )
         recorder.create_table()
         return recorder
 
