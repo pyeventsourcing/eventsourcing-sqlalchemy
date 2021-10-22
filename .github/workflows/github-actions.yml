@@ -87,6 +87,11 @@ jobs:
         with:
           path: /home/runner/.local
           key: os-${{ matrix.os }}-python-${{ matrix.python-version}}-poetry-${{matrix.poetry-version }}-${{ hashFiles('**/poetry.lock') }}
+      - name: Setup database
+        run: |
+          PGPASSWORD=postgres psql -c 'CREATE DATABASE eventsourcing;' -U postgres -h localhost
+          PGPASSWORD=postgres psql -c "CREATE USER eventsourcing WITH PASSWORD 'eventsourcing';" -U postgres -h localhost
+
       - name: Run tests
         run: make test
         env:
