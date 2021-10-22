@@ -8,7 +8,7 @@ from typing import List
 from unittest.case import TestCase
 from uuid import UUID
 
-base_dir = Path(__file__).parents[1]
+BASE_DIR = Path(__file__).parents[1]
 
 
 class TestExample(TestCase):
@@ -71,9 +71,9 @@ class TestDocs(TestCase):
                 pass
 
     def test_readme(self) -> None:
-        path = base_dir / "README.md"
-        if not os.path.exists(path):
-            self.skipTest("Skipped test, README file not found: {}".format(path))
+        path = BASE_DIR / "README.md"
+        if not path.exists():
+            self.fail(f"README file not found: {path}")
         self.check_code_snippets_in_file(path)
 
     def check_code_snippets_in_file(self, doc_path: Path) -> None:  # noqa: C901
@@ -179,7 +179,12 @@ class TestDocs(TestCase):
         tempfile.flush()
 
         # Run the code and catch errors.
-        p = Popen([sys.executable, temp_path], stdout=PIPE, stderr=PIPE)
+        p = Popen(
+            [sys.executable, temp_path],
+            stdout=PIPE,
+            stderr=PIPE,
+            env={"PYTHONPATH": BASE_DIR},
+        )
         outb, errb = p.communicate()
         out = outb.decode("utf8")
         err = errb.decode("utf8")
