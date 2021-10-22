@@ -18,6 +18,7 @@ classifiers = [
 readme = "README.md"
 homepage = "https://eventsourcing.readthedocs.io/"
 repository = "https://github.com/pyeventsourcing/eventsourcing-sqlalchemy"
+include = ["eventsourcing_sqlalchemy/py.typed"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
