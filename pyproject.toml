@@ -1,15 +1,13 @@
 [tool.poetry]
 name = "eventsourcing-sqlalchemy"
 version = "0.1.0"
-description = "Python package for eventsourcing with Django."
+description = "Python package for eventsourcing with SQLAlchemy."
 authors = [
     "John Bywater <john.bywater@appropriatesoftware.net>",
 ]
 license = "BSD 3-Clause"
 classifiers = [
     "Development Status :: 3 - Alpha",
-    "Framework :: Django :: 3.2",
-    "Framework :: Django",
     "License :: OSI Approved :: BSD License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
@@ -23,8 +21,6 @@ repository = "https://github.com/pyeventsourcing/eventsourcing-sqlalchemy"
 
 [tool.poetry.dependencies]
 python = "^3.8"
-
-Django = "^3.0.0"
 eventsourcing = { version = "^9.1.0", extras = ["crypto"] }
 SQLAlchemy = "^1.4.26"
 SQLAlchemy-Utils = "^0.37.9"
@@ -45,6 +41,7 @@ pre-commit-hooks = "*"
 psycopg2-binary = "*"
 pytest = "*"
 pytest-cov = "*"
+sqlalchemy-stubs = "*"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

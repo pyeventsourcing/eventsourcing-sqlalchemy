@@ -1,4 +1,5 @@
 [bandit]
-targets: eventsourcing_sqlalchemy,tests
+#targets: eventsourcing_sqlalchemy,tests
+targets: eventsourcing_sqlalchemy
 assert_used:
   skips: ['*_test.py', 'test_*.py']

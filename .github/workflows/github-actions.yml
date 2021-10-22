@@ -12,7 +12,6 @@ jobs:
       matrix:
         python-version: ["3.8", "3.9", "3.10"]
         poetry-version: ["1.1.11"]
-        django-version: ["3.0.14", "3.1.13", "3.2.8"]
         os: [ubuntu-20.04]
     runs-on: ${{ matrix.os }}
     steps:
@@ -25,16 +24,13 @@ jobs:
         uses: actions/cache@v2
         with:
           path: /home/runner/.local
-          key: os-${{ matrix.os }}-python-${{ matrix.python-version}}-poetry-${{matrix.poetry-version }}-django-${{ matrix.django-version }}-${{ hashFiles('**/poetry.lock') }}
+          key: os-${{ matrix.os }}-python-${{ matrix.python-version}}-poetry-${{matrix.poetry-version }}-${{ hashFiles('**/poetry.lock') }}
       - name: Install and set up Poetry
         if: steps.cached-dependencies.outputs.cache-hit != 'true'
         run: make install-poetry
       - name: Install packages
         if: steps.cached-dependencies.outputs.cache-hit != 'true'
         run: make install-packages opts="--no-root"
-      - name: Install Django
-        if: steps.cached-dependencies.outputs.cache-hit != 'true'
-        run: pip install "Django==${{ matrix.django-version }}"
 
   lint:
     strategy:
@@ -42,7 +38,6 @@ jobs:
       matrix:
         python-version: ["3.8", "3.9", "3.10"]
         poetry-version: ["1.1.11"]
-        django-version: ["3.2.8"]
         os: [ubuntu-20.04]
     runs-on: ${{ matrix.os }}
     needs: prepare
@@ -55,7 +50,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: /home/runner/.local
-          key: os-${{ matrix.os }}-python-${{ matrix.python-version}}-poetry-${{matrix.poetry-version }}-django-${{ matrix.django-version }}-${{ hashFiles('**/poetry.lock') }}
+          key: os-${{ matrix.os }}-python-${{ matrix.python-version}}-poetry-${{matrix.poetry-version }}-${{ hashFiles('**/poetry.lock') }}
       - name: Lint
         run: make lint
 
@@ -66,7 +61,6 @@ jobs:
       matrix:
         python-version: ["3.8", "3.9", "3.10"]
         poetry-version: ["1.1.11"]
-        django-version: ["3.0.14", "3.1.13", "3.2.8"]
         os: [ubuntu-20.04]
     runs-on: ${{ matrix.os }}
     services:
@@ -79,7 +73,7 @@ jobs:
         ports:
           - "5432:5432"
         options: >-
-          --health-cmd="POSTGRES_PASSWORD=eventsourcing pg_isready -U eventsourcing -d eventsourcing_django"
+          --health-cmd="POSTGRES_PASSWORD=eventsourcing pg_isready -U eventsourcing -d eventsourcing_sqlalchemy"
           --health-interval="10s"
           --health-timeout="5s"
           --health-retries="5"
@@ -92,7 +86,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: /home/runner/.local
-          key: os-${{ matrix.os }}-python-${{ matrix.python-version}}-poetry-${{matrix.poetry-version }}-django-${{ matrix.django-version }}-${{ hashFiles('**/poetry.lock') }}
+          key: os-${{ matrix.os }}-python-${{ matrix.python-version}}-poetry-${{matrix.poetry-version }}-${{ hashFiles('**/poetry.lock') }}
       - name: Run tests
         run: make test
         env:

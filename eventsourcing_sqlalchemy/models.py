@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+from uuid import UUID
+
 from sqlalchemy import BigInteger, Column, Index, Integer, LargeBinary, String, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy_utils.types.uuid import UUIDType
@@ -5,28 +8,39 @@ from sqlalchemy_utils.types.uuid import UUIDType
 Base = declarative_base()
 
 
-class StoredEventRecord(Base):
+class EventRecord(Base):
+    __abstract__ = True
+    originator_id: Column[UUID]
+    originator_version: Column[int]
+    topic: Column[str]
+    state: Column[bytes]
+
+
+class StoredEventRecord(EventRecord):
     __tablename__ = "stored_events"
     __abstract__ = True
 
     # Notification ID.
-    id = Column(
-        BigInteger().with_variant(Integer, "sqlite"),
+    id: Column[int] = Column(
+        BigInteger().with_variant(Integer(), "sqlite"),
         primary_key=True,
         autoincrement=True,
     )
 
     # Originator ID (e.g. an entity or aggregate ID).
-    originator_id = Column(UUIDType())
+    originator_id: Column[UUID] = Column(UUIDType(), nullable=False)
 
     # Originator version of item in sequence.
-    originator_version = Column(BigInteger().with_variant(Integer, "sqlite"))
+    originator_version: Column[int] = Column(
+        BigInteger().with_variant(Integer(), "sqlite"),
+        nullable=False,
+    )
 
     # Topic of the item (e.g. path to domain event class).
-    topic = Column(Text(), nullable=False)
+    topic: Column[str] = Column(Text(), nullable=False)
 
     # State of the item (serialized dict, possibly encrypted).
-    state = Column(LargeBinary())
+    state: Column[bytes] = Column(LargeBinary(), nullable=False)
 
     __table_args__ = (
         Index(
@@ -38,7 +52,7 @@ class StoredEventRecord(Base):
     )
 
 
-class SnapshotRecord(Base):
+class SnapshotRecord(EventRecord):
     __tablename__ = "snapshots"
     __abstract__ = True
 
@@ -47,14 +61,14 @@ class SnapshotRecord(Base):
 
     # Originator version of item in sequence.
     originator_version = Column(
-        BigInteger().with_variant(Integer, "sqlite"), primary_key=True
+        BigInteger().with_variant(Integer(), "sqlite"), primary_key=True
     )
 
     # Topic of the item (e.g. path to domain entity class).
     topic = Column(Text(), nullable=False)
 
     # State of the item (serialized dict, possibly encrypted).
-    state = Column(LargeBinary())
+    state = Column(LargeBinary(), nullable=False)
 
 
 class NotificationTrackingRecord(Base):
@@ -66,5 +80,5 @@ class NotificationTrackingRecord(Base):
 
     # Notification ID.
     notification_id = Column(
-        BigInteger().with_variant(Integer, "sqlite"), primary_key=True
+        BigInteger().with_variant(Integer(), "sqlite"), primary_key=True
     )

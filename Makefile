@@ -1,12 +1,10 @@
 .EXPORT_ALL_VARIABLES:
 
 COMPOSE_FILE ?= docker/docker-compose-local.yml
-COMPOSE_PROJECT_NAME ?= eventsourcing_django
+COMPOSE_PROJECT_NAME ?= eventsourcing_sqlalchemy
 
 POETRY_VERSION = 1.1.11
 POETRY ?= poetry
-
-DJANGO_SETTINGS_MODULE ?= tests.djangoproject.settings
 
 DOTENV_BASE_FILE ?= .env-base
 DOTENV_LOCAL_FILE ?= .env
@@ -59,13 +57,14 @@ docker-logs:
 docker-ps:
 	docker-compose ps
 
-.PHONY: migrate
-migrate:
-	$(POETRY) run django-admin migrate
-
-.PHONY: migrations
-migrations:
-	$(POETRY) run django-admin makemigrations
+# Todo: Migrations for SQLAlchemy.
+#.PHONY: migrate
+#migrate:
+#	$(POETRY) run django-admin migrate
+#
+#.PHONY: migrations
+#migrations:
+#	$(POETRY) run django-admin makemigrations
 
 .PHONY: lint-bandit
 lint-bandit:

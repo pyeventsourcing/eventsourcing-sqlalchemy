@@ -1,41 +1,42 @@
+# -*- coding: utf-8 -*-
 import os
 import sys
-from os.path import dirname, join
+from pathlib import Path
 from subprocess import PIPE, Popen
 from tempfile import NamedTemporaryFile
+from typing import List
 from unittest.case import TestCase
+from uuid import UUID
 
-import eventsourcing_sqlalchemy
-
-base_dir = dirname(dirname(os.path.abspath(eventsourcing_sqlalchemy.__file__)))
+base_dir = Path(__file__).parents[1]
 
 
 class TestExample(TestCase):
-    def test(self):
+    def test(self) -> None:
         from eventsourcing.domain import Aggregate, event
 
         class World(Aggregate):
-            def __init__(self):
-                self.history = []
+            def __init__(self) -> None:
+                self.history: List[str] = []
 
             @event("SomethingHappened")
-            def make_it_so(self, what):
+            def make_it_so(self, what: str) -> None:
                 self.history.append(what)
 
         from eventsourcing.application import Application
 
-        class Worlds(Application):
-            def create_world(self):
+        class Worlds(Application[World]):
+            def create_world(self) -> UUID:
                 world = World()
                 self.save(world)
                 return world.id
 
-            def make_it_so(self, world_id, what):
+            def make_it_so(self, world_id: UUID, what: str) -> None:
                 world = self.repository.get(world_id)
                 world.make_it_so(what)
                 self.save(world)
 
-            def get_world_history(self, world_id):
+            def get_world_history(self, world_id: UUID) -> List[str]:
                 world = self.repository.get(world_id)
                 return world.history
 
@@ -58,7 +59,7 @@ class TestDocs(TestCase):
     def tearDown(self) -> None:
         self.clean_env()
 
-    def clean_env(self):
+    def clean_env(self) -> None:
         keys = [
             "INFRASTRUCTURE_FACTORY",
             "SQLALCHEMY_URL",
@@ -69,13 +70,13 @@ class TestDocs(TestCase):
             except KeyError:
                 pass
 
-    def test_readme(self):
-        path = join(base_dir, "README.md")
+    def test_readme(self) -> None:
+        path = base_dir / "README.md"
         if not os.path.exists(path):
             self.skipTest("Skipped test, README file not found: {}".format(path))
         self.check_code_snippets_in_file(path)
 
-    def check_code_snippets_in_file(self, doc_path):
+    def check_code_snippets_in_file(self, doc_path: Path) -> None:  # noqa: C901
         lines = []
         num_code_lines = 0
         num_code_lines_in_block = 0
@@ -179,11 +180,11 @@ class TestDocs(TestCase):
 
         # Run the code and catch errors.
         p = Popen([sys.executable, temp_path], stdout=PIPE, stderr=PIPE)
-        out, err = p.communicate()
-        out = out.decode("utf8")
-        err = err.decode("utf8")
-        out = out.replace(temp_path, doc_path)
-        err = err.replace(temp_path, doc_path)
+        outb, errb = p.communicate()
+        out = outb.decode("utf8")
+        err = errb.decode("utf8")
+        out = out.replace(temp_path, str(doc_path))
+        err = err.replace(temp_path, str(doc_path))
         exit_status = p.wait()
 
         print(out)

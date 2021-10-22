@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+from eventsourcing.persistence import ApplicationRecorder
 from eventsourcing.postgres import PostgresDatastore
 from eventsourcing.tests.noninterleaving_notification_ids_testcase import (
     NonInterleavingNotificationIDsBaseCase,
@@ -16,7 +18,7 @@ class TestNonInterleaving(NonInterleavingNotificationIDsBaseCase):
         super().setUp()
         self.datastore = SQLAlchemyDatastore(url=self.sqlalchemy_db_url)
 
-    def create_recorder(self):
+    def create_recorder(self) -> ApplicationRecorder:
         recorder = SQLAlchemyApplicationRecorder(
             datastore=self.datastore, events_table_name="stored_events"
         )
@@ -37,7 +39,10 @@ class TestNonInterleavingSQLiteFileDB(TestNonInterleaving):
 
 class TestNonInterleavingPostgres(TestNonInterleaving):
     insert_num = 5000
-    sqlalchemy_db_url = "postgresql://eventsourcing:eventsourcing@localhost:5432/eventsourcing_sqlalchemy"
+    sqlalchemy_db_url = (
+        "postgresql://eventsourcing:eventsourcing@localhost:5432"
+        "/eventsourcing_sqlalchemy"
+    )
 
     def setUp(self) -> None:
         super().setUp()
@@ -47,7 +52,7 @@ class TestNonInterleavingPostgres(TestNonInterleaving):
         self.drop_tables()
         super().tearDown()
 
-    def drop_tables(self):
+    def drop_tables(self) -> None:
         datastore = PostgresDatastore(
             dbname="eventsourcing_sqlalchemy",
             host="127.0.0.1",

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os
 
 from eventsourcing.postgres import PostgresDatastore
@@ -28,7 +29,10 @@ class TestApplicationWithSQLAlchemy(TestApplicationWithPOPO):
 
 class TestWithPostgres(TestApplicationWithSQLAlchemy):
     timeit_number = 5 * TIMEIT_FACTOR
-    sqlalchemy_database_url = "postgresql://eventsourcing:eventsourcing@localhost:5432/eventsourcing_sqlalchemy"
+    sqlalchemy_database_url = (
+        "postgresql://eventsourcing:eventsourcing@localhost:5432"
+        "/eventsourcing_sqlalchemy"
+    )
 
     def setUp(self) -> None:
         super().setUp()
@@ -38,7 +42,7 @@ class TestWithPostgres(TestApplicationWithSQLAlchemy):
         self.drop_tables()
         super().tearDown()
 
-    def drop_tables(self):
+    def drop_tables(self) -> None:
         datastore = PostgresDatastore(
             dbname="eventsourcing_sqlalchemy",
             host="127.0.0.1",
