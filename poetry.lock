@@ -116,7 +116,7 @@ description = "Event sourcing in Python"
 category = "main"
 optional = false
 python-versions = "*"
-develop = false
+develop = true
 
 [package.dependencies]
 pycryptodome = {version = "<=3.10.99999", optional = true, markers = "extra == \"crypto\""}
@@ -683,7 +683,7 @@ testing = ["coverage (>=4)", "coverage-enable-subprocess (>=1)", "flaky (>=3)", 
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "ed25ad97846a1f418470c2cad21473924b422c0ed5fa1de3585b1afe1b04fb65"
+content-hash = "76d1e92e530fb6f5228a338b1be921fda16e7b8c5cd9dff6b1ea213cae8b7b35"
 
 [metadata.files]
 atomicwrites = [
