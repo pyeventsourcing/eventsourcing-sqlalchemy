@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "eventsourcing-sqlalchemy"
-version = "0.1.1"
+version = "0.2.0dev0"
 description = "Python package for eventsourcing with SQLAlchemy."
 authors = [
     "John Bywater <john.bywater@appropriatesoftware.net>",
@@ -22,7 +22,9 @@ include = ["eventsourcing_sqlalchemy/py.typed"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
-eventsourcing = { version = "^9.1.0", extras = ["crypto"] }
+#eventsourcing = { version = "^9.2.0", extras = ["crypto"] }
+eventsourcing = { git = "https://github.com/pyeventsourcing/eventsourcing.git", branch = "main", extras = ["crypto"] }
+#eventsourcing = { path = "../eventsourcing/", develop = true, extras = ["crypto"] }
 SQLAlchemy = "^1.4.26"
 SQLAlchemy-Utils = "^0.37.9"
 

@@ -21,13 +21,13 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from eventsourcing_sqlalchemy.models import (
-    Base,
+    EventRecord,
     NotificationTrackingRecord,
     SnapshotRecord,
     StoredEventRecord,
 )
 
-TBase = TypeVar("TBase", bound=Base)
+TEventRecord = TypeVar("TEventRecord", bound=EventRecord)
 
 
 class Transaction:
@@ -81,7 +81,7 @@ class Transaction:
 
 
 class SQLAlchemyDatastore:
-    record_classes: Dict[str, Tuple[Type[Base], Type[Base]]] = {}
+    record_classes: Dict[str, Tuple[Type[EventRecord], Type[EventRecord]]] = {}
 
     def __init__(self, **kwargs: Any):
         kwargs = dict(kwargs)
@@ -149,8 +149,8 @@ class SQLAlchemyDatastore:
 
     @classmethod
     def define_record_class(
-        cls, name: str, table_name: str, base_cls: Type[TBase]
-    ) -> Type[TBase]:
+        cls, name: str, table_name: str, base_cls: Type[TEventRecord]
+    ) -> Type[TEventRecord]:
         try:
             (record_class, record_base_cls) = cls.record_classes[table_name]
             if record_base_cls is not base_cls:
@@ -179,4 +179,4 @@ class SQLAlchemyDatastore:
                 },
             )
             cls.record_classes[table_name] = (record_class, base_cls)
-        return cast(Type[TBase], record_class)
+        return cast(Type[TEventRecord], record_class)

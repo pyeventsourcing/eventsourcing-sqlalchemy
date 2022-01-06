@@ -2,11 +2,11 @@
 import os
 
 from eventsourcing.postgres import PostgresDatastore
-from eventsourcing.tests.test_application_with_popo import (
+from eventsourcing.tests.application_tests.test_application_with_popo import (
     TIMEIT_FACTOR,
     TestApplicationWithPOPO,
 )
-from eventsourcing.tests.test_postgres import drop_postgres_table
+from eventsourcing.tests.persistence_tests.test_postgres import drop_postgres_table
 
 
 class TestApplicationWithSQLAlchemy(TestApplicationWithPOPO):

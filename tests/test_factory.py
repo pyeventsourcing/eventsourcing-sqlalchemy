@@ -8,8 +8,10 @@ from eventsourcing.persistence import (
     InfrastructureFactory,
     ProcessRecorder,
 )
-from eventsourcing.tests.infrastructure_testcases import InfrastructureFactoryTestCase
-from eventsourcing.utils import get_topic
+from eventsourcing.tests.persistence_tests.base_infrastructure_tests import (
+    InfrastructureFactoryTestCase,
+)
+from eventsourcing.utils import Environment
 
 from eventsourcing_sqlalchemy.factory import Factory
 from eventsourcing_sqlalchemy.recorders import (
@@ -36,8 +38,9 @@ class TestFactory(InfrastructureFactoryTestCase):
         return SQLAlchemyProcessRecorder
 
     def setUp(self) -> None:
-        os.environ[InfrastructureFactory.TOPIC] = get_topic(Factory)
-        os.environ[Factory.SQLALCHEMY_URL] = "sqlite:///:memory:"
+        self.env = Environment("TestCase")
+        self.env[InfrastructureFactory.PERSISTENCE_MODULE] = Factory.__module__
+        self.env[Factory.SQLALCHEMY_URL] = "sqlite:///:memory:"
         super().setUp()
 
     def tearDown(self) -> None:

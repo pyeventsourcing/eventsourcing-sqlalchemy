@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
-from typing import Mapping
-
 from eventsourcing.persistence import (
     AggregateRecorder,
     ApplicationRecorder,
     InfrastructureFactory,
     ProcessRecorder,
 )
-from eventsourcing.utils import strtobool
+from eventsourcing.utils import Environment, strtobool
 
 from eventsourcing_sqlalchemy.datastore import SQLAlchemyDatastore
 from eventsourcing_sqlalchemy.recorders import (
@@ -21,19 +19,19 @@ class Factory(InfrastructureFactory):
     SQLALCHEMY_URL = "SQLALCHEMY_URL"
     CREATE_TABLE = "CREATE_TABLE"
 
-    def __init__(self, application_name: str, env: Mapping[str, str]):
-        super().__init__(application_name, env)
-        db_url = self.getenv(self.SQLALCHEMY_URL)
+    def __init__(self, env: Environment):
+        super().__init__(env)
+        db_url = self.env.get(self.SQLALCHEMY_URL)
         if db_url is None:
             raise EnvironmentError(
                 "SQLAlchemy URL not found "
-                "in environment with key "
-                f"'{self.SQLALCHEMY_URL}'"
+                "in environment with keys: "
+                f"'{', '.join(self.env.create_keys(self.SQLALCHEMY_URL))}'"
             )
         self.datastore = SQLAlchemyDatastore(url=db_url)
 
     def aggregate_recorder(self, purpose: str = "events") -> AggregateRecorder:
-        prefix = self.application_name.lower() or "stored"
+        prefix = self.env.name.lower() or "stored"
         events_table_name = prefix + "_" + purpose
         for_snapshots = purpose == "snapshots"
         recorder = SQLAlchemyAggregateRecorder(
@@ -46,7 +44,7 @@ class Factory(InfrastructureFactory):
         return recorder
 
     def application_recorder(self) -> ApplicationRecorder:
-        prefix = self.application_name.lower() or "stored"
+        prefix = self.env.name.lower() or "stored"
         events_table_name = prefix + "_events"
         recorder = SQLAlchemyApplicationRecorder(
             datastore=self.datastore, events_table_name=events_table_name
@@ -56,9 +54,9 @@ class Factory(InfrastructureFactory):
         return recorder
 
     def process_recorder(self) -> ProcessRecorder:
-        prefix = self.application_name.lower() or "stored"
+        prefix = self.env.name.lower() or "stored"
         events_table_name = prefix + "_events"
-        prefix = self.application_name.lower() or "notification"
+        prefix = self.env.name.lower() or "notification"
         tracking_table_name = prefix + "_tracking"
         recorder = SQLAlchemyProcessRecorder(
             datastore=self.datastore,
@@ -71,4 +69,4 @@ class Factory(InfrastructureFactory):
 
     def env_create_table(self) -> bool:
         default = "yes"
-        return bool(strtobool(self.getenv(self.CREATE_TABLE) or default))
+        return bool(strtobool(self.env.get(self.CREATE_TABLE) or default))

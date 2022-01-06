@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from typing import Any, List, Optional, Type, cast
+from typing import Any, List, Optional, Sequence, Type, cast
 from uuid import UUID
 
 from eventsourcing.persistence import (
@@ -42,18 +42,35 @@ class SQLAlchemyAggregateRecorder(AggregateRecorder):
     def create_table(self) -> None:
         self.stored_events_table.create(self.datastore.engine, checkfirst=True)
 
-    def insert_events(self, stored_events: List[StoredEvent], **kwargs: Any) -> None:
+    def insert_events(
+        self, stored_events: List[StoredEvent], **kwargs: Any
+    ) -> Optional[Sequence[int]]:
         with self.datastore.transaction(commit=True) as session:
             self._insert_events(session, stored_events, **kwargs)
+        return None
 
     def _insert_events(
         self, session: Session, stored_events: List[StoredEvent], **kwargs: Any
-    ) -> None:
+    ) -> Optional[Sequence[int]]:
         if len(stored_events) == 0:
-            return
-        mappings = [e.__dict__ for e in stored_events]
+            return []
+        records = [
+            self.events_record_cls(
+                originator_id=e.originator_id,
+                originator_version=e.originator_version,
+                topic=e.topic,
+                state=e.state,
+            )
+            for e in stored_events
+        ]
         self._lock_table(session)
-        session.bulk_insert_mappings(mapper=self.events_record_cls, mappings=mappings)
+        for record in records:
+            session.add(record)
+        session.flush()
+        if issubclass(self.events_record_cls, StoredEventRecord):
+            return [cast(StoredEventRecord, r).id for r in records]
+        else:
+            return None
 
     def _lock_table(self, session: Session) -> None:
         if self.datastore.engine.dialect.name == "postgresql":
@@ -99,6 +116,13 @@ class SQLAlchemyAggregateRecorder(AggregateRecorder):
 
 
 class SQLAlchemyApplicationRecorder(SQLAlchemyAggregateRecorder, ApplicationRecorder):
+    def insert_events(
+        self, stored_events: List[StoredEvent], **kwargs: Any
+    ) -> Optional[Sequence[int]]:
+        with self.datastore.transaction(commit=True) as session:
+            notification_ids = self._insert_events(session, stored_events, **kwargs)
+        return notification_ids
+
     def max_notification_id(self) -> int:
         with self.datastore.transaction(commit=False) as session:
             record_class = cast(Type[StoredEventRecord], self.events_record_cls)
@@ -111,11 +135,21 @@ class SQLAlchemyApplicationRecorder(SQLAlchemyAggregateRecorder, ApplicationReco
                 max_id = 0
         return max_id
 
-    def select_notifications(self, start: int, limit: int) -> List[Notification]:
+    def select_notifications(
+        self,
+        start: int,
+        limit: int,
+        stop: Optional[int] = None,
+        topics: Sequence[str] = (),
+    ) -> List[Notification]:
         with self.datastore.transaction(commit=False) as session:
             record_class = cast(Type[StoredEventRecord], self.events_record_cls)
             q = session.query(record_class)
             q = q.filter(record_class.id >= start)
+            if stop is not None:
+                q = q.filter(record_class.id <= stop)
+            if topics:
+                q = q.filter(record_class.topic.in_(topics))
             q = q[0:limit]
 
             notifications = [
@@ -155,8 +189,8 @@ class SQLAlchemyProcessRecorder(SQLAlchemyApplicationRecorder, ProcessRecorder):
 
     def _insert_events(
         self, session: Session, stored_events: List[StoredEvent], **kwargs: Any
-    ) -> None:
-        super(SQLAlchemyProcessRecorder, self)._insert_events(
+    ) -> Optional[Sequence[int]]:
+        notification_ids = super(SQLAlchemyProcessRecorder, self)._insert_events(
             session, stored_events, **kwargs
         )
         tracking: Optional[Tracking] = kwargs.get("tracking", None)
@@ -166,6 +200,7 @@ class SQLAlchemyProcessRecorder(SQLAlchemyApplicationRecorder, ProcessRecorder):
                 notification_id=tracking.notification_id,
             )
             session.add(record)
+        return notification_ids
 
     def max_tracking_id(self, application_name: str) -> int:
         with self.datastore.transaction(commit=False) as session:

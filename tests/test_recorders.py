@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
 from uuid import uuid4
 
+from eventsourcing.base_test_cases import (
+    AggregateRecorderTestCase,
+    ApplicationRecorderTestCase,
+    ProcessRecorderTestCase,
+)
 from eventsourcing.persistence import (
     AggregateRecorder,
     ApplicationRecorder,
@@ -8,9 +13,6 @@ from eventsourcing.persistence import (
     StoredEvent,
     Tracking,
 )
-from eventsourcing.tests.aggregaterecorder_testcase import AggregateRecorderTestCase
-from eventsourcing.tests.applicationrecorder_testcase import ApplicationRecorderTestCase
-from eventsourcing.tests.processrecorder_testcase import ProcessRecorderTestCase
 from eventsourcing.tests.ramdisk import tmpfile_uris
 from sqlalchemy.future import create_engine
 from sqlalchemy.orm import sessionmaker
