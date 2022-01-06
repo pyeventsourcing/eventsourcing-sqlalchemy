@@ -14,7 +14,10 @@ from sqlalchemy import Column, Table
 from sqlalchemy.orm import Session
 
 from eventsourcing_sqlalchemy.datastore import SQLAlchemyDatastore
-from eventsourcing_sqlalchemy.models import EventRecord, StoredEventRecord
+from eventsourcing_sqlalchemy.models import (  # type: ignore
+    EventRecord,
+    StoredEventRecord,
+)
 
 
 class SQLAlchemyAggregateRecorder(AggregateRecorder):
@@ -125,7 +128,8 @@ class SQLAlchemyApplicationRecorder(SQLAlchemyAggregateRecorder, ApplicationReco
 
     def max_notification_id(self) -> int:
         with self.datastore.transaction(commit=False) as session:
-            record_class = cast(Type[StoredEventRecord], self.events_record_cls)
+            # record_class = cast(Type[StoredEventRecord], self.events_record_cls)
+            record_class = self.events_record_cls
             q = session.query(record_class)
             q = q.order_by(record_class.id.desc())
             records = q[0:1]
@@ -143,7 +147,8 @@ class SQLAlchemyApplicationRecorder(SQLAlchemyAggregateRecorder, ApplicationReco
         topics: Sequence[str] = (),
     ) -> List[Notification]:
         with self.datastore.transaction(commit=False) as session:
-            record_class = cast(Type[StoredEventRecord], self.events_record_cls)
+            # record_class = cast(Type[StoredEventRecord], self.events_record_cls)
+            record_class = self.events_record_cls
             q = session.query(record_class)
             q = q.filter(record_class.id >= start)
             if stop is not None:

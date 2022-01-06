@@ -20,7 +20,7 @@ from sqlalchemy.future import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from eventsourcing_sqlalchemy.models import (
+from eventsourcing_sqlalchemy.models import (  # type: ignore
     EventRecord,
     NotificationTrackingRecord,
     SnapshotRecord,

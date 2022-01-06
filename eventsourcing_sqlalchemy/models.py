@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# type: ignore
 from uuid import UUID
 
 from sqlalchemy import BigInteger, Column, Index, Integer, LargeBinary, String, Text
