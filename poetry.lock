@@ -132,7 +132,7 @@ postgres_dev = ["psycopg2-binary (<=2.9.99999)"]
 type = "git"
 url = "https://github.com/pyeventsourcing/eventsourcing.git"
 reference = "main"
-resolved_reference = "61799d462b97a86a676d4eebdc43475531b13512"
+resolved_reference = "99a992705a288fac5eb7456c6d382e0d41ac0bf2"
 
 [[package]]
 name = "filelock"

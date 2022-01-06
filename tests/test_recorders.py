@@ -89,7 +89,7 @@ class TestSQLAlchemyApplicationRecorder(ApplicationRecorderTestCase):
         db_uri = next(uris)
         db_uri = db_uri.lstrip("file:")
         db_url = f"sqlite:///{db_uri}"
-        self.datastore = SQLAlchemyDatastore(url=db_url)
+        self.datastore = SQLAlchemyDatastore(url=db_url, connect_args={"timeout": 15})
         self.assertTrue(self.datastore.is_sqlite_wal_mode)
         self.assertFalse(self.datastore.access_lock)
         super().test_concurrent_no_conflicts()
