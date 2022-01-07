@@ -78,11 +78,9 @@ Construct and use the application in the usual way.
 
 ```python
 school = TrainingSchool()
-
 school.register('Fido')
 school.add_trick('Fido', 'roll over')
 school.add_trick('Fido', 'play dead')
-
 tricks = school.get_tricks('Fido')
 assert tricks == ['roll over', 'play dead']
 ```
