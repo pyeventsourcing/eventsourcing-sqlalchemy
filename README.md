@@ -57,18 +57,19 @@ class Dog(Aggregate):
         self.tricks.append(trick)
 ```
 
-Set the environment variable `PERSISTENCE_MODULE` to string `'eventsourcing_sqlalchemy'`
-and the environment variable `SQLALCHEMY_URL` to an SQLAlchemy database URL.
-See the [SQLAlchemy documentation](https://docs.sqlalchemy.org/en/14/core/engines.html)
+To use this module as the persistence module for your application, set the environment
+variable `PERSISTENCE_MODULE` to `'eventsourcing_sqlalchemy'`.
+
+When using this module, you need to set the environment variable `SQLALCHEMY_URL` to an
+SQLAlchemy database URL for your database.
+Please refer to the [SQLAlchemy documentation](https://docs.sqlalchemy.org/en/14/core/engines.html)
 for more information about SQLAlchemy Database URLs.
 
 ```python
 import os
 
-os.environ.update({
-    "PERSISTENCE_MODULE": "eventsourcing_sqlalchemy",
-    "SQLALCHEMY_URL": "sqlite:///:memory:",
-})
+os.environ["PERSISTENCE_MODULE"] = "eventsourcing_sqlalchemy"
+os.environ["SQLALCHEMY_URL"] = "sqlite:///:memory:"
 ```
 
 Construct and use the application in the usual way.
