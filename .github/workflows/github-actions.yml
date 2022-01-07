@@ -11,7 +11,6 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ["3.8", "3.9", "3.10"]
-        version: ["1.1.11"]
         os: [ubuntu-20.04]
     runs-on: ${{ matrix.os }}
     steps:
@@ -37,7 +36,6 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ["3.8", "3.9", "3.10"]
-        version: ["1.1.11"]
         os: [ubuntu-20.04]
     runs-on: ${{ matrix.os }}
     needs: prepare
@@ -60,7 +58,6 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ["3.8", "3.9", "3.10"]
-        poetry-version: ["1.1.11"]
         os: [ubuntu-20.04]
     runs-on: ${{ matrix.os }}
     services:
