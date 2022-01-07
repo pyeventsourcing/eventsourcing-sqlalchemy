@@ -17,12 +17,12 @@ class TestApplicationWithSQLAlchemy(TestApplicationWithPOPO):
     def setUp(self) -> None:
         super().setUp()
         os.environ[
-            "INFRASTRUCTURE_FACTORY"
-        ] = "eventsourcing_sqlalchemy.factory:Factory"
+            "PERSISTENCE_MODULE"
+        ] = "eventsourcing_sqlalchemy"
         os.environ["SQLALCHEMY_URL"] = self.sqlalchemy_database_url
 
     def tearDown(self) -> None:
-        del os.environ["INFRASTRUCTURE_FACTORY"]
+        del os.environ["PERSISTENCE_MODULE"]
         del os.environ["SQLALCHEMY_URL"]
         super().tearDown()
 

@@ -42,7 +42,7 @@ class TestExample(TestCase):
 
         app = Worlds(
             env={
-                "INFRASTRUCTURE_FACTORY": "eventsourcing_sqlalchemy.factory:Factory",
+                "PERSISTENCE_MODULE": "eventsourcing_sqlalchemy",
                 "SQLALCHEMY_URL": "sqlite:///:memory:",
             }
         )
@@ -61,7 +61,7 @@ class TestDocs(TestCase):
 
     def clean_env(self) -> None:
         keys = [
-            "INFRASTRUCTURE_FACTORY",
+            "PERSISTENCE_MODULE",
             "SQLALCHEMY_URL",
         ]
         for key in keys:

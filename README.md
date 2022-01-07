@@ -1,7 +1,11 @@
 # Event Sourcing in Python with SQLAlchemy
 
-This package supports using the Python [eventsourcing](https://github.com/johnbywater/eventsourcing) library with [SQLAlchemy](https://www.sqlalchemy.org/).
+This package supports using the Python [eventsourcing](https://github.com/pyeventsourcing/eventsourcing) library with [SQLAlchemy](https://www.sqlalchemy.org/).
 
+To use SQLAlchemy with your Python eventsourcing applications, install
+`eventsourcing_sqlalchemy` and use `eventsourcing_sqlalchemy` as the value
+of the `PERSISTENCE_MODULE` environment variable, and set an SQLAlchemy
+database URL as the value of the environment variable `SQLALCHEMY_URL`.
 
 ## Installation
 
@@ -11,55 +15,55 @@ install Python packages into a Python virtual environment.
 
     $ pip install eventsourcing_sqlalchemy
 
-
 ## Synopsis
 
-To use SQLAlchemy with your Python eventsourcing application, use the topic `eventsourcing_sqlalchemy.factory:Factory` as the `INFRASTRUCTURE_FACTORY`
-environment variable, and set an SQLAlchemy database URL as the value of
-environment variable `SQLALCHEMY_URL`.
+Define aggregates and applications in the usual way.
 
-First define a domain model and application, in the usual way.
+```python
+from eventsourcing.domain import Aggregate, event
+
+class Dog(Aggregate):
+    @event('Registered')
+    def __init__(self, name):
+        self.name = name
+        self.tricks = []
+
+    @event('TrickAdded')
+    def add_trick(self, what):
+        self.tricks.append(what)
+```
+
+Use the library's `Application` class to define an event-sourced application.
+Add command and query methods that use event-sourced aggregates.
 
 ```python
 from eventsourcing.application import Application
-from eventsourcing.domain import Aggregate, event
 
+class TrainingSchool(Application):
+    def register(self, name):
+        dog = Dog(name)
+        self.save(dog)
+        return dog.id
 
-class World(Aggregate):
-    def __init__(self):
-        self.history = []
+    def add_trick(self, dog_id, trick):
+        dog = self.repository.get(dog_id)
+        dog.add_trick(trick)
+        self.save(dog)
 
-    @event("SomethingHappened")
-    def make_it_so(self, what):
-        self.history.append(what)
-
-
-class Worlds(Application):
-    is_snapshotting_enabled = True
-
-    def create_world(self):
-        world = World()
-        self.save(world)
-        return world.id
-
-    def make_it_so(self, world_id, what):
-        world = self.repository.get(world_id)
-        world.make_it_so(what)
-        self.save(world)
-
-    def get_world_history(self, world_id):
-        world = self.repository.get(world_id)
-        return world.history
+    def get_tricks(self, dog_id):
+        dog = self.repository.get(dog_id)
+        return dog.tricks
 ```
 
-Set environment variables `INFRASTRUCTURE_FACTORY` and `SQLALCHEMY_URL`.
-See the [SQLAlchemy documentation](https://docs.sqlalchemy.org/en/14/core/engines.html) for more information about SQLAlchemy Database URLs.
+Set environment variables `PERSISTENCE_MODULE` and `SQLALCHEMY_URL`.
+See the [SQLAlchemy documentation](https://docs.sqlalchemy.org/en/14/core/engines.html)
+for more information about SQLAlchemy Database URLs.
 
 ```python
 import os
 
 os.environ.update({
-    "INFRASTRUCTURE_FACTORY": "eventsourcing_sqlalchemy.factory:Factory",
+    "PERSISTENCE_MODULE": "eventsourcing_sqlalchemy",
     "SQLALCHEMY_URL": "sqlite:///:memory:",
 })
 ```
@@ -67,64 +71,25 @@ os.environ.update({
 Construct and use the application.
 
 ```python
-# Construct the application.
-app = Worlds()
-
-# Call application command methods.
-world_id = app.create_world()
-app.make_it_so(world_id, "dinosaurs")
-app.make_it_so(world_id, "trucks")
-app.make_it_so(world_id, "internet")
-
-# Call application query methods.
-history = app.get_world_history(world_id)
-assert history == ["dinosaurs", "trucks", "internet"]    
+school = TrainingSchool()
 ```
 
-These settings can be used with others supported by the library,
-for example to enable application-level compression and encryption
-of stored events, set `COMPRESSOR_TOPIC` and `CIPHER_KEY`.
+Evolve the state of the application by calling the
+application command methods.
 
 ```python
-from eventsourcing.cipher import AESCipher
-
-
-# Generate a cipher key (keep this safe).
-cipher_key = AESCipher.create_key(num_bytes=32)
-
-# Set environment variables.
-os.environ.update({
-    "COMPRESSOR_TOPIC": "zlib",
-    "CIPHER_KEY": cipher_key,
-})
-
-# Construct the application.
-app = Worlds()
+dog_id = school.register('Fido')
+school.add_trick(dog_id, 'roll over')
+school.add_trick(dog_id, 'play dead')
 ```
 
-We can see the application is using the SQLAlchemy infrastructure,
-and that compression and encryption are enabled, by checking the
-attributes of the application object.
+Access the state of the application by calling the
+application query methods.
 
 ```python
-from eventsourcing_sqlalchemy.datastore import SQLAlchemyDatastore
-from eventsourcing_sqlalchemy.factory import Factory
-from eventsourcing_sqlalchemy.recorders import SQLAlchemyAggregateRecorder
-from eventsourcing_sqlalchemy.recorders import SQLAlchemyApplicationRecorder
-from eventsourcing_sqlalchemy.models import StoredEventRecord
-from eventsourcing_sqlalchemy.models import SnapshotRecord
-import zlib
-
-assert isinstance(app.factory, Factory)
-assert isinstance(app.factory.datastore, SQLAlchemyDatastore)
-assert isinstance(app.events.recorder, SQLAlchemyApplicationRecorder)
-assert isinstance(app.snapshots.recorder, SQLAlchemyAggregateRecorder)
-assert issubclass(app.events.recorder.events_record_cls, StoredEventRecord)
-assert issubclass(app.snapshots.recorder.events_record_cls, SnapshotRecord)
-assert isinstance(app.mapper.cipher, AESCipher)
-assert app.mapper.compressor == zlib
+tricks = school.get_tricks(dog_id)
+assert tricks == ['roll over', 'play dead']
 ```
 
-For more information, please refer to the Python
-[eventsourcing](https://github.com/johnbywater/eventsourcing) library
-and the [SQLAlchemy](https://www.sqlalchemy.org/) project.
+See the library's [documentation](https://eventsourcing.readthedocs.io/)
+and the [SQLAlchemy](https://www.sqlalchemy.org/) project for more information.
