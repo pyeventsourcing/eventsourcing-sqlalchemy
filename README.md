@@ -5,9 +5,11 @@ This package supports using the Python
 with [SQLAlchemy](https://www.sqlalchemy.org/).
 
 To use SQLAlchemy with your Python eventsourcing applications:
-install the Python package `eventsourcing_sqlalchemy`,
-set the environment variable `PERSISTENCE_MODULE` to string `'eventsourcing_sqlalchemy'`
-and set the environment variable `SQLALCHEMY_URL` to an SQLAlchemy database URL.
+* install the Python package `eventsourcing_sqlalchemy`
+* set the environment variable `PERSISTENCE_MODULE` to `'eventsourcing_sqlalchemy'`
+* set the environment variable `SQLALCHEMY_URL` to an SQLAlchemy database URL
+
+See below for more information.
 
 ## Installation
 
@@ -17,7 +19,7 @@ install Python packages into a Python virtual environment.
 
     $ pip install eventsourcing_sqlalchemy
 
-## Synopsis
+## Getting started
 
 Define aggregates and applications in the usual way.
 
