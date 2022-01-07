@@ -49,8 +49,7 @@ class Transaction:
                 try:
                     self.session.rollback()
                 except sqlite3.OperationalError:
-                    if self.lock:
-                        pass
+                    pass
             else:
                 self.session.commit()
         except sqlalchemy.exc.InterfaceError as e:
