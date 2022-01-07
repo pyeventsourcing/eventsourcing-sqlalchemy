@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from threading import Semaphore
 from uuid import uuid4
 
 from eventsourcing.base_test_cases import (
@@ -84,6 +85,13 @@ class TestSQLAlchemyApplicationRecorder(ApplicationRecorderTestCase):
     def test_insert_select(self) -> None:
         super().test_insert_select()
 
+    def test_concurrent_no_conflicts(self) -> None:
+        self.assertFalse(self.datastore.is_sqlite_wal_mode)
+        self.assertTrue(self.datastore.access_lock)
+        self.assertFalse(self.datastore.write_lock)
+        self.assertIsInstance(self.datastore.access_lock, Semaphore)
+        super().test_concurrent_no_conflicts()
+
     def test_concurrent_no_conflicts_sqlite_filedb(self) -> None:
         uris = tmpfile_uris()
         db_uri = next(uris)
@@ -92,11 +100,8 @@ class TestSQLAlchemyApplicationRecorder(ApplicationRecorderTestCase):
         self.datastore = SQLAlchemyDatastore(url=db_url, connect_args={"timeout": 15})
         self.assertTrue(self.datastore.is_sqlite_wal_mode)
         self.assertFalse(self.datastore.access_lock)
-        super().test_concurrent_no_conflicts()
-
-    def test_concurrent_no_conflicts(self) -> None:
-        self.assertFalse(self.datastore.is_sqlite_wal_mode)
-        self.assertTrue(self.datastore.access_lock)
+        self.assertTrue(self.datastore.write_lock)
+        self.assertIsInstance(self.datastore.access_lock, Semaphore)
         super().test_concurrent_no_conflicts()
 
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import sqlite3
-from threading import Lock
+from threading import Semaphore
 from typing import Any, Dict, Optional, Tuple, Type, TypeVar, cast
 
 import sqlalchemy.exc
@@ -31,7 +31,7 @@ TEventRecord = TypeVar("TEventRecord", bound=EventRecord)
 
 
 class Transaction:
-    def __init__(self, session: Session, commit: bool, lock: Optional[Lock]):
+    def __init__(self, session: Session, commit: bool, lock: Optional[Semaphore]):
         self.session = session
         self.commit = commit
         self.lock = lock
@@ -77,6 +77,7 @@ class Transaction:
         finally:
             self.session.close()
             if self.lock is not None:
+                # print(get_ident(), "releasing lock")
                 self.lock.release()
 
 
@@ -85,7 +86,8 @@ class SQLAlchemyDatastore:
 
     def __init__(self, **kwargs: Any):
         kwargs = dict(kwargs)
-        self.access_lock: Optional[Lock] = kwargs.get("access_lock") or None
+        self.access_lock: Optional[Semaphore] = kwargs.get("access_lock") or None
+        self.write_lock: Optional[Semaphore] = kwargs.get("access_lock") or None
         self.is_sqlite_in_memory_db = kwargs.get("is_sqlite_in_memory_db") or False
         self._init_session(kwargs)
         self._init_sqlite_wal_mode()
@@ -113,7 +115,9 @@ class SQLAlchemyDatastore:
                 kwargs["connect_args"] = connect_args
                 if "poolclass" not in kwargs:
                     kwargs["poolclass"] = StaticPool
-                self.access_lock = Lock()
+                self.access_lock = Semaphore()
+            else:
+                self.write_lock = Semaphore()
 
         self.engine = create_engine(echo=False, **kwargs)
         self.session_cls: sessionmaker = sessionmaker(bind=self.engine)
@@ -143,9 +147,16 @@ class SQLAlchemyDatastore:
         )
 
     def transaction(self, commit: bool) -> Transaction:
+        lock: Optional[Semaphore] = None
         if self.access_lock:
             self.access_lock.acquire()
-        return Transaction(self.session_cls(), commit=commit, lock=self.access_lock)
+            lock = self.access_lock
+        elif commit and self.write_lock:
+            # print(get_ident(), "getting lock")
+            self.write_lock.acquire()
+            # print(get_ident(), "got lock")
+            lock = self.write_lock
+        return Transaction(self.session_cls(), commit=commit, lock=lock)
 
     @classmethod
     def define_record_class(
