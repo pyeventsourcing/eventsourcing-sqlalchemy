@@ -11,7 +11,7 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ["3.8", "3.9", "3.10"]
-        poetry-version: ["1.1.11"]
+        version: ["1.1.11"]
         os: [ubuntu-20.04]
     runs-on: ${{ matrix.os }}
     steps:
@@ -24,7 +24,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: /home/runner/.local
-          key: os-${{ matrix.os }}-python-${{ matrix.python-version}}-poetry-${{matrix.poetry-version }}-${{ hashFiles('**/poetry.lock') }}
+          key: os-${{ matrix.os }}-python-${{ matrix.python-version}}-${{ hashFiles('**/poetry.lock') }}
       - name: Install and set up Poetry
         if: steps.cached-dependencies.outputs.cache-hit != 'true'
         run: make install-poetry
@@ -37,7 +37,7 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ["3.8", "3.9", "3.10"]
-        poetry-version: ["1.1.11"]
+        version: ["1.1.11"]
         os: [ubuntu-20.04]
     runs-on: ${{ matrix.os }}
     needs: prepare
@@ -50,7 +50,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: /home/runner/.local
-          key: os-${{ matrix.os }}-python-${{ matrix.python-version}}-poetry-${{matrix.poetry-version }}-${{ hashFiles('**/poetry.lock') }}
+          key: os-${{ matrix.os }}-python-${{ matrix.python-version}}-${{ hashFiles('**/poetry.lock') }}
       - name: Lint
         run: make lint
 
@@ -86,7 +86,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: /home/runner/.local
-          key: os-${{ matrix.os }}-python-${{ matrix.python-version}}-poetry-${{matrix.poetry-version }}-${{ hashFiles('**/poetry.lock') }}
+          key: os-${{ matrix.os }}-python-${{ matrix.python-version}}-${{ hashFiles('**/poetry.lock') }}
       - name: Setup database
         run: |
           PGPASSWORD=postgres psql -c 'CREATE DATABASE eventsourcing_sqlalchemy;' -U postgres -h localhost
