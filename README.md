@@ -1,11 +1,13 @@
 # Event Sourcing in Python with SQLAlchemy
 
-This package supports using the Python [eventsourcing](https://github.com/pyeventsourcing/eventsourcing) library with [SQLAlchemy](https://www.sqlalchemy.org/).
+This package supports using the Python
+[eventsourcing](https://github.com/pyeventsourcing/eventsourcing) library
+with [SQLAlchemy](https://www.sqlalchemy.org/).
 
-To use SQLAlchemy with your Python eventsourcing applications, install
-`eventsourcing_sqlalchemy` and use `eventsourcing_sqlalchemy` as the value
-of the `PERSISTENCE_MODULE` environment variable, and set an SQLAlchemy
-database URL as the value of the environment variable `SQLALCHEMY_URL`.
+To use SQLAlchemy with your Python eventsourcing applications:
+install the Python package `eventsourcing_sqlalchemy`,
+set the environment variable `PERSISTENCE_MODULE` to string `'eventsourcing_sqlalchemy'`
+and set the environment variable `SQLALCHEMY_URL` to an SQLAlchemy database URL.
 
 ## Installation
 
@@ -20,7 +22,25 @@ install Python packages into a Python virtual environment.
 Define aggregates and applications in the usual way.
 
 ```python
+from eventsourcing.application import Application
 from eventsourcing.domain import Aggregate, event
+from uuid import uuid5, NAMESPACE_URL
+
+
+class TrainingSchool(Application):
+    def register(self, name):
+        dog = Dog(name)
+        self.save(dog)
+
+    def add_trick(self, name, trick):
+        dog = self.repository.get(Dog.create_id(name))
+        dog.add_trick(trick)
+        self.save(dog)
+
+    def get_tricks(self, name):
+        dog = self.repository.get(Dog.create_id(name))
+        return dog.tricks
+
 
 class Dog(Aggregate):
     @event('Registered')
@@ -28,34 +48,17 @@ class Dog(Aggregate):
         self.name = name
         self.tricks = []
 
+    @staticmethod
+    def create_id(name):
+        return uuid5(NAMESPACE_URL, f'/dogs/{name}')
+
     @event('TrickAdded')
-    def add_trick(self, what):
-        self.tricks.append(what)
+    def add_trick(self, trick):
+        self.tricks.append(trick)
 ```
 
-Use the library's `Application` class to define an event-sourced application.
-Add command and query methods that use event-sourced aggregates.
-
-```python
-from eventsourcing.application import Application
-
-class TrainingSchool(Application):
-    def register(self, name):
-        dog = Dog(name)
-        self.save(dog)
-        return dog.id
-
-    def add_trick(self, dog_id, trick):
-        dog = self.repository.get(dog_id)
-        dog.add_trick(trick)
-        self.save(dog)
-
-    def get_tricks(self, dog_id):
-        dog = self.repository.get(dog_id)
-        return dog.tricks
-```
-
-Set environment variables `PERSISTENCE_MODULE` and `SQLALCHEMY_URL`.
+Set the environment variable `PERSISTENCE_MODULE` to string `'eventsourcing_sqlalchemy'`
+and the environment variable `SQLALCHEMY_URL` to an SQLAlchemy database URL.
 See the [SQLAlchemy documentation](https://docs.sqlalchemy.org/en/14/core/engines.html)
 for more information about SQLAlchemy Database URLs.
 
@@ -68,26 +71,16 @@ os.environ.update({
 })
 ```
 
-Construct and use the application.
+Construct and use the application in the usual way.
 
 ```python
 school = TrainingSchool()
-```
 
-Evolve the state of the application by calling the
-application command methods.
+school.register('Fido')
+school.add_trick('Fido', 'roll over')
+school.add_trick('Fido', 'play dead')
 
-```python
-dog_id = school.register('Fido')
-school.add_trick(dog_id, 'roll over')
-school.add_trick(dog_id, 'play dead')
-```
-
-Access the state of the application by calling the
-application query methods.
-
-```python
-tricks = school.get_tricks(dog_id)
+tricks = school.get_tricks('Fido')
 assert tricks == ['roll over', 'play dead']
 ```
 
