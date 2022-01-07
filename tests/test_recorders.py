@@ -101,7 +101,7 @@ class TestSQLAlchemyApplicationRecorder(ApplicationRecorderTestCase):
         self.assertTrue(self.datastore.is_sqlite_wal_mode)
         self.assertFalse(self.datastore.access_lock)
         self.assertTrue(self.datastore.write_lock)
-        self.assertIsInstance(self.datastore.access_lock, Semaphore)
+        self.assertIsInstance(self.datastore.write_lock, Semaphore)
         super().test_concurrent_no_conflicts()
 
 
