@@ -16,9 +16,7 @@ class TestApplicationWithSQLAlchemy(TestApplicationWithPOPO):
 
     def setUp(self) -> None:
         super().setUp()
-        os.environ[
-            "PERSISTENCE_MODULE"
-        ] = "eventsourcing_sqlalchemy"
+        os.environ["PERSISTENCE_MODULE"] = "eventsourcing_sqlalchemy"
         os.environ["SQLALCHEMY_URL"] = self.sqlalchemy_database_url
 
     def tearDown(self) -> None:
