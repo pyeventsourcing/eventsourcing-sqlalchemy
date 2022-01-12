@@ -8,9 +8,7 @@ from eventsourcing.persistence import (
     InfrastructureFactory,
     ProcessRecorder,
 )
-from eventsourcing.tests.persistence_tests.base_infrastructure_tests import (
-    InfrastructureFactoryTestCase,
-)
+from eventsourcing.tests.infrastructure_factory import InfrastructureFactoryTestCase
 from eventsourcing.utils import Environment
 
 from eventsourcing_sqlalchemy.factory import Factory

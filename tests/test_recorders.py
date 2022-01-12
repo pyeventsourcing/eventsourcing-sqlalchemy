@@ -2,11 +2,6 @@
 from threading import Semaphore
 from uuid import uuid4
 
-from eventsourcing.base_test_cases import (
-    AggregateRecorderTestCase,
-    ApplicationRecorderTestCase,
-    ProcessRecorderTestCase,
-)
 from eventsourcing.persistence import (
     AggregateRecorder,
     ApplicationRecorder,
@@ -15,6 +10,11 @@ from eventsourcing.persistence import (
     Tracking,
 )
 from eventsourcing.tests.ramdisk import tmpfile_uris
+from eventsourcing.tests.recorders import (
+    AggregateRecorderTestCase,
+    ApplicationRecorderTestCase,
+    ProcessRecorderTestCase,
+)
 from sqlalchemy.future import create_engine
 from sqlalchemy.orm import sessionmaker
 

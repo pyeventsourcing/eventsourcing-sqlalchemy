@@ -2,14 +2,14 @@
 import os
 
 from eventsourcing.postgres import PostgresDatastore
-from eventsourcing.tests.application_tests.test_application_with_popo import (
+from eventsourcing.tests.example_application import (
     TIMEIT_FACTOR,
-    TestApplicationWithPOPO,
+    ExampleApplicationTestCase,
 )
-from eventsourcing.tests.persistence_tests.test_postgres import drop_postgres_table
+from eventsourcing.tests.postgres_utils import drop_postgres_table
 
 
-class TestApplicationWithSQLAlchemy(TestApplicationWithPOPO):
+class TestApplicationWithSQLAlchemy(ExampleApplicationTestCase):
     timeit_number = 30 * TIMEIT_FACTOR
     expected_factory_topic = "eventsourcing_sqlalchemy.factory:Factory"
     sqlalchemy_database_url = "sqlite:///:memory:"
@@ -52,4 +52,4 @@ class TestWithPostgres(TestApplicationWithSQLAlchemy):
         drop_postgres_table(datastore, "bankaccounts_events")
 
 
-del TestApplicationWithPOPO
+del ExampleApplicationTestCase
