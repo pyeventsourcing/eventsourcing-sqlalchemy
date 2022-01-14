@@ -22,9 +22,9 @@ include = ["eventsourcing_sqlalchemy/py.typed"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
-#eventsourcing = { version = "^9.2.0", extras = ["crypto"] }
+eventsourcing = { version = "^9.2.0.rc2", extras = ["crypto"] }
 #eventsourcing = { path = "../eventsourcing/", extras = ["crypto"], develop = true }
-eventsourcing = { git = "https://github.com/pyeventsourcing/eventsourcing.git", branch = "main", extras = ["crypto"]}
+#eventsourcing = { git = "https://github.com/pyeventsourcing/eventsourcing.git", branch = "main", extras = ["crypto"]}
 SQLAlchemy = "^1.4.26"
 SQLAlchemy-Utils = "^0.38.2"
 

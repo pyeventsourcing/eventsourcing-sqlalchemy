@@ -111,12 +111,11 @@ python-versions = "*"
 
 [[package]]
 name = "eventsourcing"
-version = "9.2.0.dev0"
+version = "9.2.0rc2"
 description = "Event sourcing in Python"
 category = "main"
 optional = false
-python-versions = "*"
-develop = false
+python-versions = ">=3.7"
 
 [package.dependencies]
 pycryptodome = {version = "<=3.12.99999", optional = true, markers = "extra == \"crypto\""}
@@ -127,12 +126,6 @@ dev = ["psycopg2-binary (<=2.9.99999)", "pycryptodome (<=3.12.99999)", "Sphinx (
 docs = ["psycopg2-binary (<=2.9.99999)", "pycryptodome (<=3.12.99999)", "Sphinx (==4.2.0)", "sphinx-rtd-theme (==1.0.0)"]
 postgres = ["psycopg2 (<=2.9.99999)"]
 postgres_dev = ["psycopg2-binary (<=2.9.99999)"]
-
-[package.source]
-type = "git"
-url = "https://github.com/pyeventsourcing/eventsourcing.git"
-reference = "main"
-resolved_reference = "df434af87fcf7ffc261b391a8d3dae900f7ddcb5"
 
 [[package]]
 name = "filelock"
@@ -258,7 +251,7 @@ docs = ["sphinx"]
 
 [[package]]
 name = "identify"
-version = "2.4.3"
+version = "2.4.4"
 description = "File identification library for Python"
 category = "dev"
 optional = false
@@ -682,7 +675,7 @@ testing = ["coverage (>=4)", "coverage-enable-subprocess (>=1)", "flaky (>=3)", 
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "428fab474849cee6191b000d6fb119e4d3e8fa999a01a69e26237872901f740a"
+content-hash = "72867e181de59fbc62fafa0af95d10b6508c66e38e2a474b61906c5c84e8e2e2"
 
 [metadata.files]
 atomicwrites = [
@@ -766,7 +759,10 @@ distlib = [
     {file = "distlib-0.3.4-py2.py3-none-any.whl", hash = "sha256:6564fe0a8f51e734df6333d08b8b94d4ea8ee6b99b5ed50613f731fd4089f34b"},
     {file = "distlib-0.3.4.zip", hash = "sha256:e4b58818180336dc9c529bfb9a0b58728ffc09ad92027a3f30b7cd91e3458579"},
 ]
-eventsourcing = []
+eventsourcing = [
+    {file = "eventsourcing-9.2.0rc2-py3-none-any.whl", hash = "sha256:5ad17c7b5d07bfaaeb9447ab28883e9857486131fd2141d662f6fc510197f37e"},
+    {file = "eventsourcing-9.2.0rc2.tar.gz", hash = "sha256:b5abbc055002cd47c38eb27141134d4dc725e71eebef0c06fef0fe0c7df584ce"},
+]
 filelock = [
     {file = "filelock-3.4.2-py3-none-any.whl", hash = "sha256:cf0fc6a2f8d26bd900f19bf33915ca70ba4dd8c56903eeb14e1e7a2fd7590146"},
     {file = "filelock-3.4.2.tar.gz", hash = "sha256:38b4f4c989f9d06d44524df1b24bd19e167d851f19b50bf3e3559952dddc5b80"},
@@ -856,8 +852,8 @@ greenlet = [
     {file = "greenlet-1.1.2.tar.gz", hash = "sha256:e30f5ea4ae2346e62cedde8794a56858a67b878dd79f7df76a0767e356b1744a"},
 ]
 identify = [
-    {file = "identify-2.4.3-py2.py3-none-any.whl", hash = "sha256:ac9c919c8ac5b90d03f8e1bce6dedcbd8a3b2a59c46737c04ed852e2d307af29"},
-    {file = "identify-2.4.3.tar.gz", hash = "sha256:8d80d877441073e7222ff272da45ca5ca1d901412790544b446e7d363ad5e9f0"},
+    {file = "identify-2.4.4-py2.py3-none-any.whl", hash = "sha256:aa68609c7454dbcaae60a01ff6b8df1de9b39fe6e50b1f6107ec81dcda624aa6"},
+    {file = "identify-2.4.4.tar.gz", hash = "sha256:6b4b5031f69c48bf93a646b90de9b381c6b5f560df4cbe0ed3cf7650ae741e4d"},
 ]
 iniconfig = [
     {file = "iniconfig-1.1.1-py2.py3-none-any.whl", hash = "sha256:011e24c64b7f47f6ebd835bb12a743f2fbe9a26d4cecaa7f53bc4f35ee9da8b3"},
