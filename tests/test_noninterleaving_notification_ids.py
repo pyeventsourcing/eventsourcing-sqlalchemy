@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 from eventsourcing.persistence import ApplicationRecorder
 from eventsourcing.postgres import PostgresDatastore
+from eventsourcing.tests.persistence import (
+    NonInterleavingNotificationIDsBaseCase,
+    tmpfile_uris,
+)
 from eventsourcing.tests.postgres_utils import drop_postgres_table
-from eventsourcing.tests.ramdisk import tmpfile_uris
-from eventsourcing.tests.recorders import NonInterleavingNotificationIDsBaseCase
 
 from eventsourcing_sqlalchemy.datastore import SQLAlchemyDatastore
 from eventsourcing_sqlalchemy.recorders import SQLAlchemyApplicationRecorder

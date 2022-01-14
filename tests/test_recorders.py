@@ -9,11 +9,11 @@ from eventsourcing.persistence import (
     StoredEvent,
     Tracking,
 )
-from eventsourcing.tests.ramdisk import tmpfile_uris
-from eventsourcing.tests.recorders import (
+from eventsourcing.tests.persistence import (
     AggregateRecorderTestCase,
     ApplicationRecorderTestCase,
     ProcessRecorderTestCase,
+    tmpfile_uris,
 )
 from sqlalchemy.future import create_engine
 from sqlalchemy.orm import sessionmaker
