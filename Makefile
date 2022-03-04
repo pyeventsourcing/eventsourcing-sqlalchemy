@@ -9,7 +9,7 @@ POETRY ?= poetry
 DOTENV_BASE_FILE ?= .env-base
 DOTENV_LOCAL_FILE ?= .env
 
-POETRY_INSTALLER_URL ?= https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py
+POETRY_INSTALLER_URL ?= https://install.python-poetry.org
 
 -include $(DOTENV_BASE_FILE)
 -include $(DOTENV_LOCAL_FILE)
@@ -112,3 +112,11 @@ fmt: fmt-black fmt-isort
 .PHONY: test
 test:
 	$(POETRY) run python -m pytest $(opts) $(call tests,.)
+
+.PHONY: build
+build:
+	$(POETRY) build
+
+.PHONY: publish
+publish:
+	$(POETRY) publish

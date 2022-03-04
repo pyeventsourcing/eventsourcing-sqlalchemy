@@ -217,3 +217,12 @@ class SQLAlchemyProcessRecorder(SQLAlchemyApplicationRecorder, ProcessRecorder):
             except IndexError:
                 max_id = 0
         return max_id
+
+    def has_tracking_id(self, application_name: str, notification_id: int) -> bool:
+        with self.datastore.transaction(commit=False) as session:
+            q = session.query(self.tracking_record_cls)
+            q = q.filter(self.tracking_record_cls.application_name == application_name)
+            q = q.filter(self.tracking_record_cls.notification_id == notification_id)
+            q = q.count()
+            print("Count:", q)
+            return bool(q)
