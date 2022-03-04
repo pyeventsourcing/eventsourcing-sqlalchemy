@@ -223,6 +223,4 @@ class SQLAlchemyProcessRecorder(SQLAlchemyApplicationRecorder, ProcessRecorder):
             q = session.query(self.tracking_record_cls)
             q = q.filter(self.tracking_record_cls.application_name == application_name)
             q = q.filter(self.tracking_record_cls.notification_id == notification_id)
-            q = q.count()
-            print("Count:", q)
-            return bool(q)
+            return bool(q.count())
