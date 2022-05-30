@@ -35,9 +35,6 @@ ifeq ($(opts),)
 	$(POETRY) run pre-commit uninstall
 endif
 
-.PHONY: install
-install: install-poetry install-packages
-
 .PHONY: lock-packages
 lock-packages:
 	$(POETRY) lock -vv --no-update
