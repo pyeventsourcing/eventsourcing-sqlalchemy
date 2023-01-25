@@ -3,7 +3,7 @@
 COMPOSE_FILE ?= docker/docker-compose-local.yml
 COMPOSE_PROJECT_NAME ?= eventsourcing_sqlalchemy
 
-POETRY_VERSION = 1.1.11
+POETRY_VERSION = 1.3.2
 POETRY ?= poetry
 
 DOTENV_BASE_FILE ?= .env-base
