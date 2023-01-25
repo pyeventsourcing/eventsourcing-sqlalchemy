@@ -70,8 +70,8 @@ for more information about SQLAlchemy Database URLs.
 ```python
 import os
 
-os.environ["PERSISTENCE_MODULE"] = "eventsourcing_sqlalchemy"
-os.environ["SQLALCHEMY_URL"] = "sqlite:///:memory:"
+os.environ['PERSISTENCE_MODULE'] = 'eventsourcing_sqlalchemy'
+os.environ['SQLALCHEMY_URL'] = 'sqlite:///:memory:'
 ```
 
 Construct and use the application in the usual way.
@@ -84,6 +84,51 @@ school.add_trick('Fido', 'play dead')
 tricks = school.get_tricks('Fido')
 assert tricks == ['roll over', 'play dead']
 ```
+
+## More options
+
+You can set the environment variable `SQLALCHEMY_CONNECTION_CREATOR_TOPIC` to a topic
+that will resolve to a callable that will be used to create database connections.
+
+For example, you can use the [Cloud SQL Python Connector](https://pypi.org/project/cloud-sql-python-connector/)
+in the following way.
+
+First install the Cloud SQL Python Connector package from PyPI.
+
+    $ pip install 'cloud-sql-python-connector[pg8000]'
+
+Then define a `getconn()` function, following the advice in the Cloud SQL
+Python Connector README page.
+
+```python
+from google.cloud.sql.connector import Connector
+
+# initialize Connector object
+connector = Connector()
+
+# function to return the database connection
+def get_google_cloud_sql_conn():
+    return connector.connect(
+        "project:region:instance",
+        "pg8000",
+        user="postgres-iam-user@gmail.com",
+        db="my-db-name",
+        enable_iam_auth=True,
+   )
+```
+
+Set the environment variable `'SQLALCHEMY_CONNECTION_CREATOR_TOPIC'`, along with
+`'PERSISTENCE_MODULE'` and `'SQLALCHEMY_URL'`.
+
+```python
+from eventsourcing.utils import get_topic
+
+os.environ['PERSISTENCE_MODULE'] = 'eventsourcing_sqlalchemy'
+os.environ['SQLALCHEMY_URL'] = 'postgresql+pg8000://'
+os.environ['SQLALCHEMY_CONNECTION_CREATOR_TOPIC'] = get_topic(get_google_cloud_sql_conn)
+```
+
+## More information
 
 See the library's [documentation](https://eventsourcing.readthedocs.io/)
 and the [SQLAlchemy](https://www.sqlalchemy.org/) project for more information.

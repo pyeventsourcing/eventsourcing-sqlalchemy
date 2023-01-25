@@ -175,7 +175,7 @@ class SQLAlchemyDatastore:
                     new_index = Index(
                         f"{table_name}_aggregate_idx",
                         unique=table_arg.unique,
-                        *table_arg.expressions,
+                        *table_arg.expressions,  # noqa B026
                     )
                     table_args.append(new_index)
                 else:

@@ -5,7 +5,7 @@ from eventsourcing.persistence import (
     InfrastructureFactory,
     ProcessRecorder,
 )
-from eventsourcing.utils import Environment, strtobool
+from eventsourcing.utils import Environment, resolve_topic, strtobool
 
 from eventsourcing_sqlalchemy.datastore import SQLAlchemyDatastore
 from eventsourcing_sqlalchemy.recorders import (
@@ -17,6 +17,7 @@ from eventsourcing_sqlalchemy.recorders import (
 
 class Factory(InfrastructureFactory):
     SQLALCHEMY_URL = "SQLALCHEMY_URL"
+    SQLALCHEMY_CONNECTION_CREATOR_TOPIC = "SQLALCHEMY_CONNECTION_CREATOR_TOPIC"
     CREATE_TABLE = "CREATE_TABLE"
 
     def __init__(self, env: Environment):
@@ -26,9 +27,13 @@ class Factory(InfrastructureFactory):
             raise EnvironmentError(
                 "SQLAlchemy URL not found "
                 "in environment with keys: "
-                f"'{', '.join(self.env.create_keys(self.SQLALCHEMY_URL))}'"
+                f"{', '.join(self.env.create_keys(self.SQLALCHEMY_URL))!r}"
             )
-        self.datastore = SQLAlchemyDatastore(url=db_url)
+        creator_topic = self.env.get(self.SQLALCHEMY_CONNECTION_CREATOR_TOPIC)
+        kwargs = {}
+        if isinstance(creator_topic, str):
+            kwargs["creator"] = resolve_topic(creator_topic)
+        self.datastore = SQLAlchemyDatastore(url=db_url, **kwargs)
 
     def aggregate_recorder(self, purpose: str = "events") -> AggregateRecorder:
         prefix = self.env.name.lower() or "stored"

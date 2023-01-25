@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 import os
+from unittest import TestCase
 
+from eventsourcing.application import Application
 from eventsourcing.postgres import PostgresDatastore
 from eventsourcing.tests.application import TIMEIT_FACTOR, ExampleApplicationTestCase
 from eventsourcing.tests.postgres_utils import drop_postgres_table
+from eventsourcing.utils import get_topic
 
 
 class TestApplicationWithSQLAlchemy(ExampleApplicationTestCase):
@@ -47,6 +50,28 @@ class TestWithPostgres(TestApplicationWithSQLAlchemy):
         )
         drop_postgres_table(datastore, "bankaccounts_events")
         drop_postgres_table(datastore, "bankaccounts_events")
+
+
+class TestWithConnectionCreatorTopic(TestCase):
+    def test(self) -> None:
+        class MyCreatorException(Exception):
+            pass
+
+        def creator() -> None:
+            raise MyCreatorException()
+
+        creator_topic = get_topic(creator)  # type: ignore[arg-type]
+
+        env = {
+            "PERSISTENCE_MODULE": "eventsourcing_sqlalchemy",
+            "SQLALCHEMY_URL": (
+                "postgresql://eventsourcing:eventsourcing@localhost:5432"
+                "/eventsourcing_sqlalchemy"
+            ),
+            "SQLALCHEMY_CONNECTION_CREATOR_TOPIC": creator_topic,
+        }
+        with self.assertRaises(MyCreatorException):
+            Application(env=env)
 
 
 del ExampleApplicationTestCase
