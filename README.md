@@ -4,6 +4,19 @@ This package supports using the Python
 [eventsourcing](https://github.com/pyeventsourcing/eventsourcing) library
 with [SQLAlchemy](https://www.sqlalchemy.org/).
 
+## Table of contents
+
+<!-- TOC -->
+* [Table of contents](#table-of-contents)
+* [Quick start](#quick-start)
+* [Installation](#installation)
+* [Getting started](#getting-started)
+* [Google Cloud SQL Python Connector](#google-cloud-sql-python-connector)
+* [More information](#more-information)
+<!-- TOC -->
+
+## Quick start
+
 To use SQLAlchemy with your Python eventsourcing applications:
 * install the Python package `eventsourcing_sqlalchemy`
 * set the environment variable `PERSISTENCE_MODULE` to `'eventsourcing_sqlalchemy'`
@@ -85,7 +98,7 @@ tricks = school.get_tricks('Fido')
 assert tricks == ['roll over', 'play dead']
 ```
 
-## More options
+## Google Cloud SQL Python Connector
 
 You can set the environment variable `SQLALCHEMY_CONNECTION_CREATOR_TOPIC` to a topic
 that will resolve to a callable that will be used to create database connections.
