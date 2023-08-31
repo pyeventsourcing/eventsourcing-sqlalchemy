@@ -546,19 +546,17 @@ version = "9.2.20"
 description = "Event sourcing in Python"
 optional = false
 python-versions = ">=3.7"
-files = []
-develop = true
+files = [
+    {file = "eventsourcing-9.2.20-py3-none-any.whl", hash = "sha256:cf377b6b1905652a48bdd125f90c1a5dda24577f87b90e3a12b9c9ba5c28398d"},
+    {file = "eventsourcing-9.2.20.tar.gz", hash = "sha256:0180781d0640f074ec4c9e414ba73651a4b7906ebe793c950da7db51e5e0f48e"},
+]
 
 [package.extras]
 crypto = ["pycryptodome (<=3.16.99999)"]
-dev = ["Sphinx (==4.2.0)", "backports.zoneinfo", "black", "coverage", "flake8", "flake8-bugbear", "isort", "mypy", "orjson", "psycopg2-binary (<=2.9.99999)", "pycryptodome (<=3.16.99999)", "pydantic", "python-coveralls", "sphinx_rtd_theme (==1.0.0)"]
-docs = ["Sphinx (==4.2.0)", "psycopg2-binary (<=2.9.99999)", "pycryptodome (<=3.16.99999)", "sphinx_rtd_theme (==1.0.0)"]
+dev = ["Sphinx (==4.2.0)", "backports.zoneinfo", "black", "coverage", "flake8", "flake8-bugbear", "isort", "mypy", "orjson", "psycopg2-binary (<=2.9.99999)", "pycryptodome (<=3.16.99999)", "pydantic", "python-coveralls", "sphinx-rtd-theme (==1.0.0)"]
+docs = ["Sphinx (==4.2.0)", "psycopg2-binary (<=2.9.99999)", "pycryptodome (<=3.16.99999)", "sphinx-rtd-theme (==1.0.0)"]
 postgres = ["psycopg2 (<=2.9.99999)"]
 postgres-dev = ["psycopg2-binary (<=2.9.99999)"]
-
-[package.source]
-type = "directory"
-url = "../eventsourcing"
 
 [[package]]
 name = "exceptiongroup"
@@ -1852,4 +1850,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.8"
-content-hash = "5670e33c0859ed4d36031e22eb2a45d92206f217694ce8f9856a951451f388d2"
+content-hash = "dea689ad2a330d29bd84b82fd6103dd77b576fa9f6a35ce37a43eba490e6238f"
