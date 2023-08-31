@@ -89,7 +89,6 @@ class SQLAlchemyDatastore:
         self.write_lock: Optional[Semaphore] = kwargs.get("access_lock") or None
         self.is_sqlite_in_memory_db = kwargs.get("is_sqlite_in_memory_db") or False
         self._init_session(kwargs)
-        self._init_sqlite_wal_mode()
         self._init_record_cls(kwargs)
 
     def _init_session(self, kwargs: Dict[Any, Any]) -> None:
@@ -124,17 +123,6 @@ class SQLAlchemyDatastore:
     def _init_session_with_session_cls(self, session_cls: sessionmaker) -> None:
         self.session_cls = session_cls
         self.engine = session_cls().get_bind()
-
-    def _init_sqlite_wal_mode(self) -> None:
-        self.is_sqlite_wal_mode = False
-        if self.engine.dialect.name != "sqlite":
-            return
-        if self.is_sqlite_in_memory_db:
-            return
-        with self.engine.connect() as connection:
-            cursor_result = connection.execute(text("PRAGMA journal_mode=WAL;"))
-            if list(cursor_result)[0][0] == "wal":
-                self.is_sqlite_wal_mode = True
 
     def _init_record_cls(self, kwargs: Dict[Any, Any]) -> None:
         self.snapshot_record_cls = kwargs.get("snapshot_record_cls") or SnapshotRecord
@@ -186,7 +174,6 @@ class SQLAlchemyDatastore:
                 {
                     "__tablename__": table_name,
                     "__table_args__": tuple(table_args),
-                    "__allow_unmapped__": True,
                 },
             )
             cls.record_classes[table_name] = (record_class, base_cls)

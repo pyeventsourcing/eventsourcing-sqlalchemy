@@ -86,7 +86,6 @@ class TestSQLAlchemyApplicationRecorder(ApplicationRecorderTestCase):
         super().test_insert_select()
 
     def test_concurrent_no_conflicts(self) -> None:
-        self.assertFalse(self.datastore.is_sqlite_wal_mode)
         self.assertTrue(self.datastore.access_lock)
         self.assertFalse(self.datastore.write_lock)
         self.assertIsInstance(self.datastore.access_lock, Semaphore)
@@ -98,7 +97,6 @@ class TestSQLAlchemyApplicationRecorder(ApplicationRecorderTestCase):
         db_uri = db_uri.lstrip("file:")
         db_url = f"sqlite:///{db_uri}"
         self.datastore = SQLAlchemyDatastore(url=db_url, connect_args={"timeout": 15})
-        self.assertTrue(self.datastore.is_sqlite_wal_mode)
         self.assertFalse(self.datastore.access_lock)
         self.assertTrue(self.datastore.write_lock)
         self.assertIsInstance(self.datastore.write_lock, Semaphore)
