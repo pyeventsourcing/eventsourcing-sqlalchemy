@@ -3,10 +3,14 @@
 from uuid import UUID
 
 from sqlalchemy import BigInteger, Column, Index, Integer, LargeBinary, String, Text
+from sqlalchemy.orm import Mapped
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy_utils.types.uuid import UUIDType
 
-Base = declarative_base()
+class Base:
+    __allow_unmapped__ = True
+
+Base = declarative_base(cls=Base)
 
 
 class EventRecord(Base):
@@ -22,26 +26,26 @@ class StoredEventRecord(EventRecord):
     __abstract__ = True
 
     # Notification ID.
-    id: Column[int] = Column(
+    id: Mapped[int] = Column(
         BigInteger().with_variant(Integer(), "sqlite"),
         primary_key=True,
         autoincrement=True,
     )
 
     # Originator ID (e.g. an entity or aggregate ID).
-    originator_id: Column[UUID] = Column(UUIDType(), nullable=False)
+    originator_id: Mapped[UUID] = Column(UUIDType(), nullable=False)
 
     # Originator version of item in sequence.
-    originator_version: Column[int] = Column(
+    originator_version: Mapped[int] = Column(
         BigInteger().with_variant(Integer(), "sqlite"),
         nullable=False,
     )
 
     # Topic of the item (e.g. path to domain event class).
-    topic: Column[str] = Column(Text(), nullable=False)
+    topic: Mapped[str] = Column(Text(), nullable=False)
 
     # State of the item (serialized dict, possibly encrypted).
-    state: Column[bytes] = Column(LargeBinary(), nullable=False)
+    state: Mapped[bytes] = Column(LargeBinary(), nullable=False)
 
     __table_args__ = (
         Index(

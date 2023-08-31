@@ -186,6 +186,7 @@ class SQLAlchemyDatastore:
                 {
                     "__tablename__": table_name,
                     "__table_args__": tuple(table_args),
+                    "__allow_unmapped__": True,
                 },
             )
             cls.record_classes[table_name] = (record_class, base_cls)

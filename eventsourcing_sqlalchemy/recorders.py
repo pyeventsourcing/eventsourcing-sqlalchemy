@@ -10,7 +10,7 @@ from eventsourcing.persistence import (
     StoredEvent,
     Tracking,
 )
-from sqlalchemy import Column, Table
+from sqlalchemy import Column, Table, text
 from sqlalchemy.orm import Session
 
 from eventsourcing_sqlalchemy.datastore import SQLAlchemyDatastore
@@ -77,7 +77,7 @@ class SQLAlchemyAggregateRecorder(AggregateRecorder):
 
     def _lock_table(self, session: Session) -> None:
         if self.datastore.engine.dialect.name == "postgresql":
-            session.execute(f"LOCK TABLE {self.events_table_name} IN EXCLUSIVE MODE")
+            session.execute(text(f"LOCK TABLE {self.events_table_name} IN EXCLUSIVE MODE"))
 
     def select_events(
         self,
