@@ -80,9 +80,11 @@ class TestSQLAlchemyApplicationRecorder(ApplicationRecorderTestCase):
             datastore=self.datastore, events_table_name="stored_events"
         )
         recorder.create_table()
+        self.datastore.init_sqlite_wal_mode()
         return recorder
 
     def test_insert_select(self) -> None:
+        self.assertFalse(self.datastore.is_sqlite_wal_mode)
         super().test_insert_select()
 
     def test_concurrent_no_conflicts(self) -> None:
@@ -98,11 +100,11 @@ class TestSQLAlchemyApplicationRecorder(ApplicationRecorderTestCase):
         db_uri = db_uri.lstrip("file:")
         db_url = f"sqlite:///{db_uri}"
         self.datastore = SQLAlchemyDatastore(url=db_url, connect_args={"timeout": 15})
-        self.assertTrue(self.datastore.is_sqlite_wal_mode)
         self.assertFalse(self.datastore.access_lock)
         self.assertTrue(self.datastore.write_lock)
         self.assertIsInstance(self.datastore.write_lock, Semaphore)
         super().test_concurrent_no_conflicts()
+        self.assertTrue(self.datastore.is_sqlite_wal_mode)
 
 
 class TestSQLAlchemyProcessRecorder(ProcessRecorderTestCase):
@@ -117,6 +119,9 @@ class TestSQLAlchemyProcessRecorder(ProcessRecorderTestCase):
         )
         recorder.create_table()
         return recorder
+
+    def test_has_tracking_id(self) -> None:
+        super().test_has_tracking_id()
 
     def test_performance(self) -> None:
         super().test_performance()

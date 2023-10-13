@@ -23,6 +23,7 @@ class TestNonInterleaving(NonInterleavingNotificationIDsBaseCase):
             datastore=self.datastore, events_table_name="stored_events"
         )
         recorder.create_table()
+        self.datastore.init_sqlite_wal_mode()
         return recorder
 
 
@@ -35,6 +36,10 @@ class TestNonInterleavingSQLiteFileDB(TestNonInterleaving):
         db_uri = db_uri.lstrip("file:")
         self.sqlalchemy_db_url = f"sqlite:///{db_uri}"
         super().setUp()
+
+    def test(self) -> None:
+        super().test()
+        self.assertTrue(self.datastore.is_sqlite_wal_mode)
 
 
 class TestNonInterleavingPostgres(TestNonInterleaving):
