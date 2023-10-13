@@ -28,7 +28,7 @@ python = "^3.8"
 #eventsourcing = { git = "https://github.com/pyeventsourcing/eventsourcing.git", branch = "main", extras = ["crypto"]}
 SQLAlchemy-Utils = ">=0.38.2"
 eventsourcing = "~9.2.6"
-sqlalchemy = "^2.0.20"
+sqlalchemy = ">=1.4.26, <2.1"
 
 [tool.poetry.dev-dependencies]
 bandit = "*"
