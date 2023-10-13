@@ -3,7 +3,11 @@
 from uuid import UUID
 
 from sqlalchemy import BigInteger, Column, Index, Integer, LargeBinary, String, Text
-from sqlalchemy.ext.declarative import declarative_base
+
+try:
+    from sqlalchemy.orm import declarative_base
+except ImportError:
+    from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Mapped
 from sqlalchemy_utils.types.uuid import UUIDType
 

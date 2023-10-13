@@ -10,6 +10,7 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "License :: OSI Approved :: BSD License",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
@@ -25,7 +26,7 @@ python = "^3.8"
 #eventsourcing = { path = "../eventsourcing/", extras = ["crypto"] }
 #eventsourcing = { path = "../eventsourcing/", extras = ["crypto"], develop = true }
 #eventsourcing = { git = "https://github.com/pyeventsourcing/eventsourcing.git", branch = "main", extras = ["crypto"]}
-SQLAlchemy-Utils = "~0.38.2"
+SQLAlchemy-Utils = ">=0.38.2"
 eventsourcing = "~9.2.6"
 sqlalchemy = "^2.0.20"
 

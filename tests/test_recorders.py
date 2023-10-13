@@ -116,6 +116,9 @@ class TestSQLAlchemyProcessRecorder(ProcessRecorderTestCase):
         recorder.create_table()
         return recorder
 
+    def test_has_tracking_id(self) -> None:
+        super().test_has_tracking_id()
+
     def test_performance(self) -> None:
         super().test_performance()
 
