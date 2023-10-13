@@ -77,7 +77,9 @@ class SQLAlchemyAggregateRecorder(AggregateRecorder):
 
     def _lock_table(self, session: Session) -> None:
         if self.datastore.engine.dialect.name == "postgresql":
-            session.execute(text(f"LOCK TABLE {self.events_table_name} IN EXCLUSIVE MODE"))
+            session.execute(
+                text(f"LOCK TABLE {self.events_table_name} IN EXCLUSIVE MODE")
+            )
 
     def select_events(
         self,
@@ -109,9 +111,9 @@ class SQLAlchemyAggregateRecorder(AggregateRecorder):
                     originator_id=r.originator_id,
                     originator_version=r.originator_version,
                     topic=r.topic,
-                    state=bytes(r.state)
-                    if isinstance(r.state, memoryview)
-                    else r.state,
+                    state=(
+                        bytes(r.state) if isinstance(r.state, memoryview) else r.state
+                    ),
                 )
                 for r in records
             ]
@@ -163,9 +165,9 @@ class SQLAlchemyApplicationRecorder(SQLAlchemyAggregateRecorder, ApplicationReco
                     originator_id=r.originator_id,
                     originator_version=r.originator_version,
                     topic=r.topic,
-                    state=bytes(r.state)
-                    if isinstance(r.state, memoryview)
-                    else r.state,
+                    state=(
+                        bytes(r.state) if isinstance(r.state, memoryview) else r.state
+                    ),
                 )
                 for r in q
             ]

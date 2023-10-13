@@ -3,12 +3,14 @@
 from uuid import UUID
 
 from sqlalchemy import BigInteger, Column, Index, Integer, LargeBinary, String, Text
-from sqlalchemy.orm import Mapped
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import Mapped
 from sqlalchemy_utils.types.uuid import UUIDType
+
 
 class Base:
     __allow_unmapped__ = True
+
 
 Base = declarative_base(cls=Base)
 

@@ -15,7 +15,7 @@ from eventsourcing.persistence import (
     PersistenceError,
     ProgrammingError,
 )
-from sqlalchemy import Index, text
+from sqlalchemy import Index
 from sqlalchemy.future import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
