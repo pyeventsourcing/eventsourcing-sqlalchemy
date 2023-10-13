@@ -80,12 +80,15 @@ class TestSQLAlchemyApplicationRecorder(ApplicationRecorderTestCase):
             datastore=self.datastore, events_table_name="stored_events"
         )
         recorder.create_table()
+        self.datastore.init_sqlite_wal_mode()
         return recorder
 
     def test_insert_select(self) -> None:
+        self.assertFalse(self.datastore.is_sqlite_wal_mode)
         super().test_insert_select()
 
     def test_concurrent_no_conflicts(self) -> None:
+        self.assertFalse(self.datastore.is_sqlite_wal_mode)
         self.assertTrue(self.datastore.access_lock)
         self.assertFalse(self.datastore.write_lock)
         self.assertIsInstance(self.datastore.access_lock, Semaphore)
@@ -101,6 +104,7 @@ class TestSQLAlchemyApplicationRecorder(ApplicationRecorderTestCase):
         self.assertTrue(self.datastore.write_lock)
         self.assertIsInstance(self.datastore.write_lock, Semaphore)
         super().test_concurrent_no_conflicts()
+        self.assertTrue(self.datastore.is_sqlite_wal_mode)
 
 
 class TestSQLAlchemyProcessRecorder(ProcessRecorderTestCase):

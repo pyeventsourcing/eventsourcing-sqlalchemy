@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import sqlite3
-from threading import Semaphore
+from threading import Lock, Semaphore
 from typing import Any, Dict, Optional, Tuple, Type, TypeVar, cast
 
 import sqlalchemy.exc
@@ -15,7 +15,7 @@ from eventsourcing.persistence import (
     PersistenceError,
     ProgrammingError,
 )
-from sqlalchemy import Index
+from sqlalchemy import Index, text
 from sqlalchemy.future import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -89,6 +89,12 @@ class SQLAlchemyDatastore:
         self.write_lock: Optional[Semaphore] = kwargs.get("access_lock") or None
         self.is_sqlite_in_memory_db = kwargs.get("is_sqlite_in_memory_db") or False
         self._init_session(kwargs)
+        self.is_sqlite_filedb = (
+            self.engine.dialect.name == "sqlite" and not self.is_sqlite_in_memory_db
+        )
+        self._tried_init_sqlite_wal_mode = False
+        self._wal_mode_lock = Lock()
+        self.is_sqlite_wal_mode = False
         self._init_record_cls(kwargs)
 
     def _init_session(self, kwargs: Dict[Any, Any]) -> None:
@@ -133,7 +139,19 @@ class SQLAlchemyDatastore:
             kwargs.get("notification_tracking_record_cls") or NotificationTrackingRecord
         )
 
+    def init_sqlite_wal_mode(self) -> None:
+        self._tried_init_sqlite_wal_mode = True
+        if self.is_sqlite_filedb and not self.is_sqlite_wal_mode:
+            with self._wal_mode_lock:
+                with self.engine.connect() as connection:
+                    cursor_result = connection.execute(text("PRAGMA journal_mode=WAL;"))
+                    if list(cursor_result)[0][0] == "wal":
+                        self.is_sqlite_wal_mode = True
+
     def transaction(self, commit: bool) -> Transaction:
+        if not self._tried_init_sqlite_wal_mode:
+            # Do this after creating tables otherwise get disk I/0 error with SQLA v2.
+            self.init_sqlite_wal_mode()
         lock: Optional[Semaphore] = None
         if self.access_lock:
             self.access_lock.acquire()
