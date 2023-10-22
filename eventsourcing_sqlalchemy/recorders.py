@@ -122,10 +122,17 @@ class SQLAlchemyAggregateRecorder(AggregateRecorder):
 
 class SQLAlchemyApplicationRecorder(SQLAlchemyAggregateRecorder, ApplicationRecorder):
     def insert_events(
-        self, stored_events: List[StoredEvent], **kwargs: Any
+        self,
+        stored_events: List[StoredEvent],
+        *,
+        session: Optional[Session] = None,
+        **kwargs: Any,
     ) -> Optional[Sequence[int]]:
-        with self.datastore.transaction(commit=True) as session:
+        if session is not None:
             notification_ids = self._insert_events(session, stored_events, **kwargs)
+        else:
+            with self.datastore.transaction(commit=True) as session:
+                notification_ids = self._insert_events(session, stored_events, **kwargs)
         return notification_ids
 
     def max_notification_id(self) -> int:

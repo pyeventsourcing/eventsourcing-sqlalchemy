@@ -3,10 +3,13 @@ import os
 from unittest import TestCase
 
 from eventsourcing.application import Application
+from eventsourcing.domain import Aggregate
 from eventsourcing.postgres import PostgresDatastore
 from eventsourcing.tests.application import TIMEIT_FACTOR, ExampleApplicationTestCase
 from eventsourcing.tests.postgres_utils import drop_postgres_table
 from eventsourcing.utils import get_topic
+
+from eventsourcing_sqlalchemy.recorders import SQLAlchemyApplicationRecorder
 
 
 class TestApplicationWithSQLAlchemy(ExampleApplicationTestCase):
@@ -23,6 +26,18 @@ class TestApplicationWithSQLAlchemy(ExampleApplicationTestCase):
         del os.environ["PERSISTENCE_MODULE"]
         del os.environ["SQLALCHEMY_URL"]
         super().tearDown()
+
+    def test_transactions_managed_outside_application(self) -> None:
+        app = Application()
+
+        # Create an aggregate.
+        assert isinstance(app.recorder, SQLAlchemyApplicationRecorder)
+        with app.recorder.datastore.transaction(commit=True) as session:
+            aggregate = Aggregate()
+            app.save(aggregate, session=session)
+
+        # Get aggregate.
+        self.assertIsInstance(app.repository.get(aggregate.id), Aggregate)
 
 
 class TestWithPostgres(TestApplicationWithSQLAlchemy):
