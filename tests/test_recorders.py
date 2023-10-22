@@ -98,7 +98,7 @@ class TestSQLAlchemyApplicationRecorder(ApplicationRecorderTestCase):
         uris = tmpfile_uris()
         db_uri = next(uris)
         db_uri = db_uri.lstrip("file:")
-        db_url = f"sqlite:///{db_uri}"
+        db_url = "sqlite:///" + db_uri
         self.datastore = SQLAlchemyDatastore(url=db_url, connect_args={"timeout": 15})
         self.assertFalse(self.datastore.access_lock)
         self.assertTrue(self.datastore.write_lock)

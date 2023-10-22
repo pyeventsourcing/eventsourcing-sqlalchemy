@@ -34,7 +34,7 @@ class TestNonInterleavingSQLiteFileDB(TestNonInterleaving):
         uris = tmpfile_uris()
         db_uri = next(uris)
         db_uri = db_uri.lstrip("file:")
-        self.sqlalchemy_db_url = f"sqlite:///{db_uri}"
+        self.sqlalchemy_db_url = "sqlite:///" + db_uri
         super().setUp()
 
     def test(self) -> None:
