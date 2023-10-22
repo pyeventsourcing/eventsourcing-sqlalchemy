@@ -30,9 +30,31 @@ class TestApplicationWithSQLAlchemy(ExampleApplicationTestCase):
     def test_transactions_managed_outside_application(self) -> None:
         app = Application()
 
-        # Create an aggregate.
-        assert isinstance(app.recorder, SQLAlchemyApplicationRecorder)
+        assert isinstance(app.recorder, SQLAlchemyApplicationRecorder)  # For IDE/mypy.
+
+        # Create an aggregate - autoflush=True.
         with app.recorder.datastore.transaction(commit=True) as session:
+            self.assertTrue(session.autoflush)
+            aggregate = Aggregate()
+            app.save(aggregate, session=session)
+
+        # Get aggregate.
+        self.assertIsInstance(app.repository.get(aggregate.id), Aggregate)
+
+        # Create an aggregate - autoflush=False with session.no_autoflush.
+        with app.recorder.datastore.transaction(commit=True) as session:
+            with session.no_autoflush:
+                self.assertFalse(session.autoflush)
+                aggregate = Aggregate()
+                app.save(aggregate, session=session)
+
+        # Get aggregate.
+        self.assertIsInstance(app.repository.get(aggregate.id), Aggregate)
+
+        # Create an aggregate - autoflush=False after configuring session maker.
+        app.recorder.datastore.session_cls.kw["autoflush"] = False
+        with app.recorder.datastore.transaction(commit=True) as session:
+            self.assertFalse(session.autoflush)
             aggregate = Aggregate()
             app.save(aggregate, session=session)
 
