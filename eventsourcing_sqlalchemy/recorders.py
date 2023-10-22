@@ -129,6 +129,7 @@ class SQLAlchemyApplicationRecorder(SQLAlchemyAggregateRecorder, ApplicationReco
         **kwargs: Any,
     ) -> Optional[Sequence[int]]:
         if session is not None:
+            assert isinstance(session, Session), type(session)
             notification_ids = self._insert_events(session, stored_events, **kwargs)
         else:
             with self.datastore.transaction(commit=True) as session:
