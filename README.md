@@ -11,6 +11,7 @@ with [SQLAlchemy](https://www.sqlalchemy.org/).
 * [Quick start](#quick-start)
 * [Installation](#installation)
 * [Getting started](#getting-started)
+* [How to inject existing DB session](#how-to-inject-existing-db-session)
 * [Google Cloud SQL Python Connector](#google-cloud-sql-python-connector)
 * [More information](#more-information)
 <!-- TOC -->
@@ -97,6 +98,77 @@ school.add_trick('Fido', 'play dead')
 tricks = school.get_tricks('Fido')
 assert tricks == ['roll over', 'play dead']
 ```
+
+## Managing transactions outside the application
+
+Sometimes you might need to update an SQLAlchemy ORM model atomically with updates to
+your event-sourced application. You can manage transactions outside the application.
+Just call the application recorder's `transaction()` method and use the returned
+`Transaction` object as a context manager to obtain an SQLAlchemy `Session`
+object. You can `add()` your ORM objects to the session. Everything will commit
+atomically when the `Transaction` context manager exits.
+
+```python
+with school.recorder.transaction() as session:
+    # Update CRUD model.
+    ...  # session.add(my_orm_object)
+    # Update event-sourced application.
+    school.register('Buster')
+    school.add_trick('Buster', 'fetch ball')
+
+    tricks = school.get_tricks('Buster')
+    assert tricks == ['fetch ball']
+```
+
+Please note, the SQLAlchemy "autoflush" ORM feature is enabled by default.
+
+```python
+app = Application()
+
+with app.recorder.transaction() as session:
+    assert session.autoflush is True
+```
+
+If you need "autoflush" to be disabled, you can set the environment variable `SQLALCHEMY_NO_AUTOFLUSH`.
+
+```python
+app = Application(env={'SQLALCHEMY_AUTOFLUSH': 'False'})
+
+with app.recorder.transaction() as session:
+    assert session.autoflush is False
+```
+
+Alternatively, you can set the autoflush option directly on the SQLAlchemy session maker.
+
+```python
+app = Application()
+app.recorder.datastore.session_maker.kw["autoflush"] = False
+
+with app.recorder.transaction() as session:
+    assert session.autoflush is False
+```
+
+Alternatively, you can use the session's ``no_autoflush`` context manager.
+
+```python
+app = Application()
+
+with app.recorder.transaction() as session:
+    with session.no_autoflush:
+        assert session.autoflush is False
+```
+
+Alternatively, you can set the ``autoflush`` attribute of the session object.
+
+```python
+app = Application()
+
+with app.recorder.transaction() as session:
+    session.autoflush = False
+    # Add CRUD objects to the session.
+    ...
+```
+
 
 ## Google Cloud SQL Python Connector
 

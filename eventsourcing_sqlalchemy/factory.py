@@ -17,9 +17,11 @@ from eventsourcing_sqlalchemy.recorders import (
 
 class Factory(InfrastructureFactory):
     SQLALCHEMY_URL = "SQLALCHEMY_URL"
+    SQLALCHEMY_AUTOFLUSH = "SQLALCHEMY_AUTOFLUSH"
     SQLALCHEMY_CONNECTION_CREATOR_TOPIC = "SQLALCHEMY_CONNECTION_CREATOR_TOPIC"
     CREATE_TABLE = "CREATE_TABLE"
 
+    datastore_class = SQLAlchemyDatastore
     aggregate_recorder_class = SQLAlchemyAggregateRecorder
     application_recorder_class = SQLAlchemyApplicationRecorder
     process_recorder_class = SQLAlchemyProcessRecorder
@@ -33,11 +35,16 @@ class Factory(InfrastructureFactory):
                 "in environment with keys: "
                 f"{', '.join(self.env.create_keys(self.SQLALCHEMY_URL))!r}"
             )
-        creator_topic = self.env.get(self.SQLALCHEMY_CONNECTION_CREATOR_TOPIC)
+
+        autoflush = strtobool(self.env.get(self.SQLALCHEMY_AUTOFLUSH) or "True")
+
         kwargs = {}
+
+        creator_topic = self.env.get(self.SQLALCHEMY_CONNECTION_CREATOR_TOPIC)
         if isinstance(creator_topic, str):
             kwargs["creator"] = resolve_topic(creator_topic)
-        self.datastore = SQLAlchemyDatastore(url=db_url, **kwargs)
+
+        self.datastore = self.datastore_class(url=db_url, autoflush=autoflush, **kwargs)
 
     def aggregate_recorder(self, purpose: str = "events") -> AggregateRecorder:
         prefix = self.env.name.lower() or "stored"

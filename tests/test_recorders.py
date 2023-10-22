@@ -43,8 +43,8 @@ class TestSQLAlchemyAggregateRecorder(AggregateRecorderTestCase):
 
 class TestSQLAlchemyAggregateRecorderWithExternalSession(AggregateRecorderTestCase):
     def setUp(self) -> None:
-        session_cls = sessionmaker(bind=create_engine(url="sqlite:///:memory:"))
-        self.datastore = SQLAlchemyDatastore(session_cls=session_cls)
+        session_maker = sessionmaker(bind=create_engine(url="sqlite:///:memory:"))
+        self.datastore = SQLAlchemyDatastore(session_maker=session_maker)
 
     def create_recorder(self) -> AggregateRecorder:
         recorder = SQLAlchemyAggregateRecorder(

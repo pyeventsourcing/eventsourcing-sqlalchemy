@@ -13,7 +13,7 @@ from eventsourcing.persistence import (
 from sqlalchemy import Column, Table, text
 from sqlalchemy.orm import Session
 
-from eventsourcing_sqlalchemy.datastore import SQLAlchemyDatastore
+from eventsourcing_sqlalchemy.datastore import SQLAlchemyDatastore, Transaction
 from eventsourcing_sqlalchemy.models import (  # type: ignore
     EventRecord,
     StoredEventRecord,
@@ -33,16 +33,21 @@ class SQLAlchemyAggregateRecorder(AggregateRecorder):
         record_cls_name = "".join(
             [s.capitalize() for s in events_table_name.rstrip("s").split("_")]
         )
-        if for_snapshots:
-            base_cls: Type[EventRecord] = self.datastore.snapshot_record_cls
-            self._has_autoincrementing_ids = False
-        else:
-            base_cls = self.datastore.stored_event_record_cls
+        if not for_snapshots:
+            base_cls: Type[EventRecord] = self.datastore.base_stored_event_record_cls
             self._has_autoincrementing_ids = True
+        else:
+            base_cls = self.datastore.base_snapshot_record_cls
+            self._has_autoincrementing_ids = False
         self.events_record_cls = self.datastore.define_record_class(
-            name=record_cls_name, table_name=self.events_table_name, base_cls=base_cls
+            cls_name=record_cls_name,
+            table_name=self.events_table_name,
+            base_cls=base_cls,
         )
         self.stored_events_table = self.events_record_cls.__table__
+
+    def transaction(self, commit: bool = True) -> Transaction:
+        return self.datastore.transaction(commit=commit)
 
     def create_table(self) -> None:
         self.stored_events_table.create(self.datastore.engine, checkfirst=True)
@@ -50,7 +55,7 @@ class SQLAlchemyAggregateRecorder(AggregateRecorder):
     def insert_events(
         self, stored_events: List[StoredEvent], **kwargs: Any
     ) -> Optional[Sequence[int]]:
-        with self.datastore.transaction(commit=True) as session:
+        with self.transaction(commit=True) as session:
             self._insert_events(session, stored_events, **kwargs)
         return None
 
@@ -92,7 +97,7 @@ class SQLAlchemyAggregateRecorder(AggregateRecorder):
         desc: bool = False,
         limit: Optional[int] = None,
     ) -> List[StoredEvent]:
-        with self.datastore.transaction(commit=False) as session:
+        with self.transaction(commit=False) as session:
             q = session.query(self.events_record_cls)
             q = q.filter(self.events_record_cls.originator_id == originator_id)
             originator_version: Column[int] = self.events_record_cls.originator_version
@@ -135,12 +140,12 @@ class SQLAlchemyApplicationRecorder(SQLAlchemyAggregateRecorder, ApplicationReco
             assert isinstance(session, Session), type(session)
             notification_ids = self._insert_events(session, stored_events, **kwargs)
         else:
-            with self.datastore.transaction(commit=True) as session:
+            with self.transaction(commit=True) as session:
                 notification_ids = self._insert_events(session, stored_events, **kwargs)
         return notification_ids
 
     def max_notification_id(self) -> int:
-        with self.datastore.transaction(commit=False) as session:
+        with self.transaction(commit=False) as session:
             # record_class = cast(Type[StoredEventRecord], self.events_record_cls)
             record_class = self.events_record_cls
             q = session.query(record_class)
@@ -159,7 +164,7 @@ class SQLAlchemyApplicationRecorder(SQLAlchemyAggregateRecorder, ApplicationReco
         stop: Optional[int] = None,
         topics: Sequence[str] = (),
     ) -> List[Notification]:
-        with self.datastore.transaction(commit=False) as session:
+        with self.transaction(commit=False) as session:
             # record_class = cast(Type[StoredEventRecord], self.events_record_cls)
             record_class = self.events_record_cls
             q = session.query(record_class)
@@ -195,9 +200,9 @@ class SQLAlchemyProcessRecorder(SQLAlchemyApplicationRecorder, ProcessRecorder):
         super().__init__(datastore=datastore, events_table_name=events_table_name)
         self.tracking_table_name = tracking_table_name
         self.tracking_record_cls = self.datastore.define_record_class(
-            name="NotificationTrackingRecord",
+            cls_name="NotificationTrackingRecord",
             table_name=self.tracking_table_name,
-            base_cls=datastore.notification_tracking_record_cls,
+            base_cls=datastore.base_notification_tracking_record_cls,
         )
         self.tracking_table: Table = self.tracking_record_cls.__table__
 
@@ -221,7 +226,7 @@ class SQLAlchemyProcessRecorder(SQLAlchemyApplicationRecorder, ProcessRecorder):
         return notification_ids
 
     def max_tracking_id(self, application_name: str) -> int:
-        with self.datastore.transaction(commit=False) as session:
+        with self.transaction(commit=False) as session:
             q = session.query(self.tracking_record_cls)
             q = q.filter(self.tracking_record_cls.application_name == application_name)
             q = q.order_by(self.tracking_record_cls.notification_id.desc())
@@ -232,7 +237,7 @@ class SQLAlchemyProcessRecorder(SQLAlchemyApplicationRecorder, ProcessRecorder):
         return max_id
 
     def has_tracking_id(self, application_name: str, notification_id: int) -> bool:
-        with self.datastore.transaction(commit=False) as session:
+        with self.transaction(commit=False) as session:
             q = session.query(self.tracking_record_cls)
             q = q.filter(self.tracking_record_cls.application_name == application_name)
             q = q.filter(self.tracking_record_cls.notification_id == notification_id)

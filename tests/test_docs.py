@@ -13,10 +13,15 @@ class TestDocs(TestCase):
     def tearDown(self) -> None:
         self.clean_env()
 
+    def setUp(self) -> None:
+        self.clean_env()
+
     def clean_env(self) -> None:
         keys = [
             "PERSISTENCE_MODULE",
             "SQLALCHEMY_URL",
+            "SQLALCHEMY_AUTOFLUSH",
+            "SQLALCHEMY_CONNECTION_CREATOR_TOPIC",
         ]
         for key in keys:
             try:

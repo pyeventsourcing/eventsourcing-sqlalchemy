@@ -13,8 +13,8 @@ class TestDatastore(TestCase):
         self.assertIsInstance(datastore, SQLAlchemyDatastore)
 
     def test_should_be_created_with_session_cls(self) -> None:
-        session_cls = sessionmaker(bind=create_engine(url="sqlite:///:memory:"))
-        datastore = SQLAlchemyDatastore(session_cls=session_cls)
+        session_maker = sessionmaker(bind=create_engine(url="sqlite:///:memory:"))
+        datastore = SQLAlchemyDatastore(session_maker=session_maker)
         self.assertIsInstance(datastore, SQLAlchemyDatastore)
 
     def test_should_raise_exception_without_url_or_session_cls(self) -> None:

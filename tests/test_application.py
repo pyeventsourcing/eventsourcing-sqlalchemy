@@ -36,30 +36,40 @@ class TestApplicationWithSQLAlchemy(ExampleApplicationTestCase):
         with app.recorder.datastore.transaction(commit=True) as session:
             self.assertTrue(session.autoflush)
             aggregate = Aggregate()
-            app.save(aggregate, session=session)
+            app.save(aggregate)
 
-        # Get aggregate.
-        self.assertIsInstance(app.repository.get(aggregate.id), Aggregate)
+            # Get aggregate.
+            self.assertIsInstance(app.repository.get(aggregate.id), Aggregate)
 
         # Create an aggregate - autoflush=False with session.no_autoflush.
         with app.recorder.datastore.transaction(commit=True) as session:
             with session.no_autoflush:
                 self.assertFalse(session.autoflush)
                 aggregate = Aggregate()
-                app.save(aggregate, session=session)
+                app.save(aggregate)
 
-        # Get aggregate.
-        self.assertIsInstance(app.repository.get(aggregate.id), Aggregate)
+            # Get aggregate.
+            self.assertIsInstance(app.repository.get(aggregate.id), Aggregate)
+
+        # Create an aggregate - autoflush=False with session.no_autoflush.
+        with app.recorder.datastore.transaction(commit=True) as session:
+            with session.no_autoflush:
+                self.assertFalse(session.autoflush)
+                aggregate = Aggregate()
+                app.save(aggregate)
+
+            # Get aggregate.
+            self.assertIsInstance(app.repository.get(aggregate.id), Aggregate)
 
         # Create an aggregate - autoflush=False after configuring session maker.
-        app.recorder.datastore.session_cls.kw["autoflush"] = False
+        app.recorder.datastore.session_maker.kw["autoflush"] = False
         with app.recorder.datastore.transaction(commit=True) as session:
             self.assertFalse(session.autoflush)
             aggregate = Aggregate()
-            app.save(aggregate, session=session)
+            app.save(aggregate)
 
-        # Get aggregate.
-        self.assertIsInstance(app.repository.get(aggregate.id), Aggregate)
+            # Get aggregate.
+            self.assertIsInstance(app.repository.get(aggregate.id), Aggregate)
 
 
 class TestWithPostgres(TestApplicationWithSQLAlchemy):
