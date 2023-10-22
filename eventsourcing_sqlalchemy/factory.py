@@ -20,6 +20,10 @@ class Factory(InfrastructureFactory):
     SQLALCHEMY_CONNECTION_CREATOR_TOPIC = "SQLALCHEMY_CONNECTION_CREATOR_TOPIC"
     CREATE_TABLE = "CREATE_TABLE"
 
+    aggregate_recorder_class = SQLAlchemyAggregateRecorder
+    application_recorder_class = SQLAlchemyApplicationRecorder
+    process_recorder_class = SQLAlchemyProcessRecorder
+
     def __init__(self, env: Environment):
         super().__init__(env)
         db_url = self.env.get(self.SQLALCHEMY_URL)
@@ -39,7 +43,7 @@ class Factory(InfrastructureFactory):
         prefix = self.env.name.lower() or "stored"
         events_table_name = prefix + "_" + purpose
         for_snapshots = purpose == "snapshots"
-        recorder = SQLAlchemyAggregateRecorder(
+        recorder = self.aggregate_recorder_class(
             datastore=self.datastore,
             events_table_name=events_table_name,
             for_snapshots=for_snapshots,
@@ -51,7 +55,7 @@ class Factory(InfrastructureFactory):
     def application_recorder(self) -> ApplicationRecorder:
         prefix = self.env.name.lower() or "stored"
         events_table_name = prefix + "_events"
-        recorder = SQLAlchemyApplicationRecorder(
+        recorder = self.application_recorder_class(
             datastore=self.datastore, events_table_name=events_table_name
         )
         if self.env_create_table():
@@ -63,7 +67,7 @@ class Factory(InfrastructureFactory):
         events_table_name = prefix + "_events"
         prefix = self.env.name.lower() or "notification"
         tracking_table_name = prefix + "_tracking"
-        recorder = SQLAlchemyProcessRecorder(
+        recorder = self.process_recorder_class(
             datastore=self.datastore,
             events_table_name=events_table_name,
             tracking_table_name=tracking_table_name,

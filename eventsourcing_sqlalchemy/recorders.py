@@ -35,8 +35,10 @@ class SQLAlchemyAggregateRecorder(AggregateRecorder):
         )
         if for_snapshots:
             base_cls: Type[EventRecord] = self.datastore.snapshot_record_cls
+            self._has_autoincrementing_ids = False
         else:
             base_cls = self.datastore.stored_event_record_cls
+            self._has_autoincrementing_ids = True
         self.events_record_cls = self.datastore.define_record_class(
             name=record_cls_name, table_name=self.events_table_name, base_cls=base_cls
         )
@@ -66,11 +68,12 @@ class SQLAlchemyAggregateRecorder(AggregateRecorder):
             )
             for e in stored_events
         ]
-        self._lock_table(session)
+        if self._has_autoincrementing_ids:
+            self._lock_table(session)
         for record in records:
             session.add(record)
-        session.flush()
-        if issubclass(self.events_record_cls, StoredEventRecord):
+        if self._has_autoincrementing_ids:
+            session.flush()  # We want the autoincremented IDs now.
             return [cast(StoredEventRecord, r).id for r in records]
         else:
             return None
@@ -122,10 +125,18 @@ class SQLAlchemyAggregateRecorder(AggregateRecorder):
 
 class SQLAlchemyApplicationRecorder(SQLAlchemyAggregateRecorder, ApplicationRecorder):
     def insert_events(
-        self, stored_events: List[StoredEvent], **kwargs: Any
+        self,
+        stored_events: List[StoredEvent],
+        *,
+        session: Optional[Session] = None,
+        **kwargs: Any,
     ) -> Optional[Sequence[int]]:
-        with self.datastore.transaction(commit=True) as session:
+        if session is not None:
+            assert isinstance(session, Session), type(session)
             notification_ids = self._insert_events(session, stored_events, **kwargs)
+        else:
+            with self.datastore.transaction(commit=True) as session:
+                notification_ids = self._insert_events(session, stored_events, **kwargs)
         return notification_ids
 
     def max_notification_id(self) -> int:
