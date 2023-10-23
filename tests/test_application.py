@@ -44,7 +44,7 @@ class TestApplicationWithSQLAlchemy(ExampleApplicationTestCase):
         assert isinstance(app.recorder, SQLAlchemyApplicationRecorder)  # For IDE/mypy.
 
         # Create an aggregate - autoflush=True.
-        with app.recorder.datastore.transaction(commit=True) as session:
+        with app.recorder.transaction(commit=True) as session:
             self.assertTrue(session.autoflush)
             aggregate = Aggregate()
             app.save(aggregate)
@@ -53,7 +53,7 @@ class TestApplicationWithSQLAlchemy(ExampleApplicationTestCase):
             self.assertIsInstance(app.repository.get(aggregate.id), Aggregate)
 
         # Create an aggregate - autoflush=False with session.no_autoflush.
-        with app.recorder.datastore.transaction(commit=True) as session:
+        with app.recorder.transaction(commit=True) as session:
             with session.no_autoflush:
                 self.assertFalse(session.autoflush)
                 aggregate = Aggregate()
@@ -63,7 +63,7 @@ class TestApplicationWithSQLAlchemy(ExampleApplicationTestCase):
             self.assertIsInstance(app.repository.get(aggregate.id), Aggregate)
 
         # Create an aggregate - autoflush=False with session.no_autoflush.
-        with app.recorder.datastore.transaction(commit=True) as session:
+        with app.recorder.transaction(commit=True) as session:
             with session.no_autoflush:
                 self.assertFalse(session.autoflush)
                 aggregate = Aggregate()
@@ -73,9 +73,9 @@ class TestApplicationWithSQLAlchemy(ExampleApplicationTestCase):
             self.assertIsInstance(app.repository.get(aggregate.id), Aggregate)
 
         # Create an aggregate - autoflush=False after configuring session maker.
-        assert app.recorder.datastore.session_maker is not None
-        app.recorder.datastore.session_maker.kw["autoflush"] = False
-        with app.recorder.datastore.transaction(commit=True) as session:
+        assert app.factory.datastore.session_maker is not None
+        app.factory.datastore.session_maker.kw["autoflush"] = False
+        with app.recorder.transaction(commit=True) as session:
             self.assertFalse(session.autoflush)
             aggregate = Aggregate()
             app.save(aggregate)
@@ -87,7 +87,7 @@ class TestApplicationWithSQLAlchemy(ExampleApplicationTestCase):
 
         # Create an aggregate - autoflush=False after configuring environment.
         assert isinstance(app.recorder, SQLAlchemyApplicationRecorder)
-        with app.recorder.datastore.transaction(commit=True) as session:
+        with app.recorder.transaction(commit=True) as session:
             self.assertFalse(session.autoflush)
             aggregate = Aggregate()
             app.save(aggregate)
