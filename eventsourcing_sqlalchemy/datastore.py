@@ -148,12 +148,13 @@ class SQLAlchemyDatastore:
                 else:
                     self.write_lock = Semaphore()
 
-            self.engine = create_engine(url, echo=False, **engine_kwargs)
+            engine = create_engine(url, echo=False, **engine_kwargs)
+            self.is_sqlite_filedb = (
+                engine.dialect.name == "sqlite" and not self.is_sqlite_in_memory_db
+            )
+            self.engine = engine
             self.session_maker = sessionmaker(bind=self.engine, autoflush=autoflush)
 
-            self.is_sqlite_filedb = (
-                self.engine.dialect.name == "sqlite" and not self.is_sqlite_in_memory_db
-            )
         else:
             self.engine = None
             self.session_maker = None
