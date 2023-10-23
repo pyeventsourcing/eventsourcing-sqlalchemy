@@ -1,24 +1,23 @@
 # -*- coding: utf-8 -*-
 import os
-from typing import Any
 from unittest import TestCase
 
-import fastapi_sqlalchemy
 from eventsourcing.application import AggregateNotFound, Application
 from eventsourcing.domain import Aggregate
 from eventsourcing.postgres import PostgresDatastore
 from eventsourcing.tests.application import TIMEIT_FACTOR, ExampleApplicationTestCase
 from eventsourcing.tests.postgres_utils import drop_postgres_table
-from eventsourcing.utils import get_topic
+from eventsourcing.utils import clear_topic_cache, get_topic
 from fastapi_sqlalchemy import DBSessionMiddleware
 from sqlalchemy.orm import scoped_session
+
+from eventsourcing_sqlalchemy.factory import Factory
 
 try:
     from sqlalchemy.orm import declarative_base  # type: ignore
 except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
 
-from eventsourcing_sqlalchemy.factory import Factory
 from eventsourcing_sqlalchemy.recorders import SQLAlchemyApplicationRecorder
 
 
@@ -31,6 +30,7 @@ class TestApplicationWithSQLAlchemy(ExampleApplicationTestCase):
         super().setUp()
         os.environ["PERSISTENCE_MODULE"] = "eventsourcing_sqlalchemy"
         os.environ["SQLALCHEMY_URL"] = self.sqlalchemy_database_url
+        clear_topic_cache()
 
     def tearDown(self) -> None:
         del os.environ["PERSISTENCE_MODULE"]
@@ -41,6 +41,7 @@ class TestApplicationWithSQLAlchemy(ExampleApplicationTestCase):
     def test_transactions_managed_outside_application(self) -> None:
         app = Application()
 
+        assert isinstance(app.factory, Factory)  # For IDE/mypy.
         assert isinstance(app.recorder, SQLAlchemyApplicationRecorder)  # For IDE/mypy.
 
         # Create an aggregate - autoflush=True.
@@ -103,17 +104,21 @@ class TestApplicationWithSQLAlchemy(ExampleApplicationTestCase):
         from sqlalchemy.orm import sessionmaker
 
         engine = create_engine(self.sqlalchemy_database_url)
+
         session = scoped_session(
             sessionmaker(autocommit=False, autoflush=False, bind=engine)
         )
 
-        app = Application()
-        assert isinstance(app.factory, Factory)  # For IDE/mypy.
-        app.factory.datastore.set_scoped_session(session)
+        class MyScopedSession(scoped_session):
+            def __init__(self) -> None:
+                pass
 
-        # Set up database.
-        assert isinstance(app.recorder, SQLAlchemyApplicationRecorder)  # For IDE/mypy.
-        app.recorder.create_table()
+            def __getattribute__(self, item: str) -> None:
+                return getattr(session, item)
+
+        app = Application(
+            env={"SQLALCHEMY_SCOPED_SESSION_TOPIC": get_topic(MyScopedSession)}
+        )
 
         # Handle request.
         aggregate = Aggregate()
@@ -146,7 +151,7 @@ class TestApplicationWithSQLAlchemy(ExampleApplicationTestCase):
         # After request.
         session.remove()
 
-    def test_flask_sqlalchemy(self) -> None:  # 40%
+    def test_flask_sqlalchemy(self) -> None:  # (40% popularity for Python Web devs)
         # flask_sqlalchemy.SQLAlchemy.session  #  <- this is an SQLA scoped_session
 
         del os.environ["SQLALCHEMY_URL"]
@@ -160,18 +165,21 @@ class TestApplicationWithSQLAlchemy(ExampleApplicationTestCase):
         Base = declarative_base()
         db = SQLAlchemy(flask_app, model_class=Base)
 
-        es_app = Application()
-        assert isinstance(
-            es_app.recorder, SQLAlchemyApplicationRecorder
-        )  # For IDE/mypy.
-        assert isinstance(es_app.factory, Factory)  # For IDE/mypy.
+        class FlaskScopedSession(scoped_session):
+            def __init__(self) -> None:
+                pass
+
+            def __getattribute__(self, item: str) -> None:
+                return getattr(db.session, item)
 
         # Set up database.
         with flask_app.app_context():
-            es_app.factory.datastore.set_scoped_session(db.session)
-            es_app.recorder.create_table()
+            es_app = Application(
+                env={"SQLALCHEMY_SCOPED_SESSION_TOPIC": get_topic(FlaskScopedSession)}
+            )
 
-            # Handle request.
+        # Handle requests.
+        with flask_app.app_context():
             aggregate = Aggregate()
             es_app.save(aggregate)
             es_app.repository.get(aggregate.id)
@@ -186,8 +194,7 @@ class TestApplicationWithSQLAlchemy(ExampleApplicationTestCase):
             # After request.
             db.session.remove()
 
-    #
-    def test_fastapi_sqlalchemy(self) -> None:  # 20%
+    def test_fastapi_sqlalchemy(self) -> None:  # (20% popularity for Python Web devs)
         # fastapi_sqlalchemy.db.session  # <- this is not a scoped_session,
         # it's a property that returns a new session when accessed
 
@@ -198,39 +205,24 @@ class TestApplicationWithSQLAlchemy(ExampleApplicationTestCase):
 
         fastapi_app = FastAPI()
 
-        fastapi_app.add_middleware(DBSessionMiddleware, db_url="sqlite://")
-
-        class FakeScopedSession(scoped_session):
-            def __init__(self, db: Any) -> None:
-                self._db = db
-
-            def __getattribute__(self, item: str) -> None:
-                if item == "_db":
-                    return super().__getattribute__(item)
-                else:
-                    return getattr(self._db.session, item)
-
-        Session = FakeScopedSession(fastapi_sqlalchemy.db)
-
-        es_app = Application()
-        assert isinstance(
-            es_app.recorder, SQLAlchemyApplicationRecorder
-        )  # For IDE/mypy.
-        assert isinstance(es_app.factory, Factory)  # For IDE/mypy.
+        fastapi_app.add_middleware(
+            DBSessionMiddleware, db_url=self.sqlalchemy_database_url
+        )
 
         fastapi_app.build_middleware_stack()
 
-        @fastapi_app.get(path="/index")
-        def index() -> str:
-            # aggregate = Aggregate()
-            # es_app.save(aggregate)
-            # es_app.repository.get(aggregate.id)
-            return ""
+        class FastapiScopedSession(scoped_session):
+            def __init__(self) -> None:
+                pass
+
+            def __getattribute__(self, item: str) -> None:
+                return getattr(db.session, item)
 
         # Set up database.
         with db(commit_on_exit=True):
-            es_app.factory.datastore.set_scoped_session(Session)
-            es_app.recorder.create_table()
+            es_app = Application(
+                env={"SQLALCHEMY_SCOPED_SESSION_TOPIC": get_topic(FastapiScopedSession)}
+            )
 
         with db(commit_on_exit=True):
             # Handle request.
@@ -252,19 +244,19 @@ class TestApplicationWithSQLAlchemy(ExampleApplicationTestCase):
                 es_app.repository.get(aggregate.id)
 
     #
-    # def test_tornado_sqlalchemy(self) -> None:  # 3%
+    # def test_tornado_sqlalchemy(self) -> None:  # 3% popularity
     #     tornado_sqlalchemy.SessionMixin.session  #  <- this just calls an SQLA sessionmaker
     #
-    # def test_web2py_sqlalchemy(self) -> None:  # 3%
+    # def test_web2py_sqlalchemy(self) -> None:  # 3% popularity
     #
-    # def test_bottle_sqlalchemy(self) -> None:  # 2%
+    # def test_bottle_sqlalchemy(self) -> None:  # 2% popularity
     #
-    # def test_cherrypy_sqlalchemy(self) -> None:  # 2%
+    # def test_cherrypy_sqlalchemy(self) -> None:  # 2% popularity
     #     cherrypy.request.db  #  <- this is an SQLA scoped_session
     #
-    # def test_falcon_sqlalchemy(self) -> None:  # 2%
+    # def test_falcon_sqlalchemy(self) -> None:  # 2% popularity
     #
-    # def test_pyramid_sqlalchemy(self) -> None:  # 1%
+    # def test_pyramid_sqlalchemy(self) -> None:  # 1% popularity
     #     pyramid_sqlalchemy.Session  #  <- this is an SQLA scoped_session
 
 

@@ -114,6 +114,7 @@ class SQLAlchemyDatastore:
     def __init__(
         self,
         *,
+        session: Optional[scoped_session] = None,
         session_maker: Optional[sessionmaker] = None,
         url: Optional[str] = None,
         autoflush: bool = True,
@@ -128,7 +129,9 @@ class SQLAlchemyDatastore:
         self._tried_init_sqlite_wal_mode = False
         self._wal_mode_lock = Lock()
 
-        if session_maker is not None:
+        if session is not None:
+            self.set_scoped_session(session)
+        elif session_maker is not None:
             self.session_maker: Optional[sessionmaker] = session_maker
             self.engine: Optional[Union[Engine, Connection]] = (
                 self.session_maker().get_bind()
