@@ -21,6 +21,11 @@ except ImportError:
 from eventsourcing_sqlalchemy.recorders import SQLAlchemyApplicationRecorder
 
 
+class ScopedSessionAdapter(scoped_session):
+    def __init__(self) -> None:
+        pass
+
+
 class TestApplicationWithSQLAlchemy(ExampleApplicationTestCase):
     timeit_number = 30 * TIMEIT_FACTOR
     expected_factory_topic = "eventsourcing_sqlalchemy.factory:Factory"
@@ -109,16 +114,13 @@ class TestApplicationWithSQLAlchemy(ExampleApplicationTestCase):
             sessionmaker(autocommit=False, autoflush=False, bind=engine)
         )
 
-        class MyScopedSession(scoped_session):
-            def __init__(self) -> None:
-                pass
-
+        class MyScopedSession(ScopedSessionAdapter):
             def __getattribute__(self, item: str) -> None:
                 return getattr(session, item)
 
-        app = Application(
-            env={"SQLALCHEMY_SCOPED_SESSION_TOPIC": get_topic(MyScopedSession)}
-        )
+        scoped_session_topic = get_topic(MyScopedSession)
+
+        app = Application(env={"SQLALCHEMY_SCOPED_SESSION_TOPIC": scoped_session_topic})
 
         # Handle request.
         aggregate = Aggregate()
@@ -165,10 +167,7 @@ class TestApplicationWithSQLAlchemy(ExampleApplicationTestCase):
         Base = declarative_base()
         db = SQLAlchemy(flask_app, model_class=Base)
 
-        class FlaskScopedSession(scoped_session):
-            def __init__(self) -> None:
-                pass
-
+        class FlaskScopedSession(ScopedSessionAdapter):
             def __getattribute__(self, item: str) -> None:
                 return getattr(db.session, item)
 
@@ -211,10 +210,7 @@ class TestApplicationWithSQLAlchemy(ExampleApplicationTestCase):
 
         fastapi_app.build_middleware_stack()
 
-        class FastapiScopedSession(scoped_session):
-            def __init__(self) -> None:
-                pass
-
+        class FastapiScopedSession(ScopedSessionAdapter):
             def __getattribute__(self, item: str) -> None:
                 return getattr(db.session, item)
 

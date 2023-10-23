@@ -11,7 +11,10 @@ with [SQLAlchemy](https://www.sqlalchemy.org/).
 * [Quick start](#quick-start)
 * [Installation](#installation)
 * [Getting started](#getting-started)
-* [How to inject existing DB session](#how-to-inject-existing-db-session)
+* [Managing transactions outside the application](#managing-transactions-outside-the-application)
+* [Managing sessions with Flask-SQLAlchemy](#managing-sessions-with-flask-sqlalchemy)
+* [Managing sessions with FastAPI-SQLAlchemy](#managing-sessions-with-fastapi-sqlalchemy)
+* [Using SQLAlchemy scoped sessions](#using-sqlalchemy-scoped-sessions)
 * [Google Cloud SQL Python Connector](#google-cloud-sql-python-connector)
 * [More information](#more-information)
 <!-- TOC -->
@@ -106,7 +109,8 @@ your event-sourced application. You can manage transactions outside the applicat
 Just call the application recorder's `transaction()` method and use the returned
 `Transaction` object as a context manager to obtain an SQLAlchemy `Session`
 object. You can `add()` your ORM objects to the session. Everything will commit
-atomically when the `Transaction` context manager exits.
+atomically when the `Transaction` context manager exits. This effectively implements
+thread-scoped transactions.
 
 ```python
 with school.recorder.transaction() as session:
@@ -168,6 +172,211 @@ with app.recorder.transaction() as session:
     # Add CRUD objects to the session.
     ...
 ```
+
+## Using SQLAlchemy scoped sessions
+
+It's possible to configure the application to use an SQLAlchemy `scoped_session`
+object which will scope the session to standard threads, or other things such
+as Web requests in a Web application framework.
+
+Define an adapter for a `scoped_session` object and configure the event-sourced
+application using the environment variable `SQLALCHEMY_SCOPED_SESSION_TOPIC`.
+
+```python
+from eventsourcing.application import AggregateNotFound
+from eventsourcing.utils import get_topic
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, scoped_session
+
+# Create engine.
+engine = create_engine('sqlite:///:memory:')
+
+# Create a scoped_session object.
+session = scoped_session(
+    sessionmaker(autocommit=False, autoflush=False, bind=engine)
+)
+
+# Define an adapter for the scoped session.
+class MyScopedSessionAdapter:
+    def __getattribute__(self, item: str) -> None:
+        return getattr(session, item)
+
+# Produce the topic of the scoped session adapter class.
+scoped_session_topic = get_topic(MyScopedSessionAdapter)
+
+# Construct an event-sourced application.
+app = Application(
+    env={'SQLALCHEMY_SCOPED_SESSION_TOPIC': scoped_session_topic}
+)
+
+# During request.
+aggregate = Aggregate()
+app.save(aggregate)
+app.repository.get(aggregate.id)
+session.commit()
+
+# After request.
+session.remove()
+
+# During request.
+app.repository.get(aggregate.id)
+
+# After request.
+session.remove()
+
+# During request.
+aggregate = Aggregate()
+app.save(aggregate)
+# forget to commit
+
+# After request.
+session.remove()
+
+# During request.
+try:
+    # forgot to commit
+    app.repository.get(aggregate.id)
+except AggregateNotFound:
+    pass
+else:
+    raise Exception("Expected aggregate not found")
+
+# After request.
+session.remove()
+```
+
+As you can see, you need to call `commit()` during a request, and call `remove()`
+after the request completes. Packages that integrate SQLAlchemy with Web application
+frameworks tend to automate this call to `remove()`. Some of them also call `commit()`
+automatically if an exception is not raised during the handling of a request.
+
+## Managing sessions with Flask-SQLAlchemy
+
+The package [Flask-SQLAlchemy](https://github.com/pallets-eco/flask-sqlalchemy)
+([full docs](https://flask-sqlalchemy.palletsprojects.com/)) provides a class
+called `SQLAlchemy` which has a `session` attribute which is an SQLAlchemy
+`scoped_session`. This can be adapted in a similar way.
+
+```python
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+try:
+    from sqlalchemy.orm import declarative_base  # type: ignore
+except ImportError:
+    from sqlalchemy.ext.declarative import declarative_base
+
+# Define a Flask app.
+flask_app = Flask(__name__)
+flask_app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+
+# Integration between Flask and SQLAlchemy.
+Base = declarative_base()
+db = SQLAlchemy(flask_app, model_class=Base)
+
+
+# Define an adapter for the scoped session.
+class FlaskScopedSession:
+    def __getattribute__(self, item: str) -> None:
+        return getattr(db.session, item)
+
+# Produce the topic of the scoped session adapter class.
+scoped_session_adapter_topic = get_topic(FlaskScopedSession)
+
+# Construct an event-sourced application within a Flask application context.
+with flask_app.app_context():
+    es_app = Application(
+        env={"SQLALCHEMY_SCOPED_SESSION_TOPIC": scoped_session_adapter_topic}
+    )
+
+# Process requests.
+with flask_app.app_context():
+    # During the request.
+    aggregate = Aggregate()
+    es_app.save(aggregate)
+    db.session.commit()
+
+    # After request (this is done automatically).
+    db.session.remove()
+
+    # During request.
+    es_app.repository.get(aggregate.id)
+
+    # After request (this is done automatically).
+    db.session.remove()
+```
+
+## Managing sessions with FastAPI-SQLAlchemy
+
+The package [FastAPI-SQLAlchemy](https://github.com/mfreeborn/fastapi-sqlalchemy)
+doesn't actually use an SQLAlchemy `scoped_session`, but instead has a global `db`
+variable that has a `session` attribute which returns request-scoped sessions when
+accessed. This can be adapted in a similar way.
+
+```python
+from fastapi import FastAPI
+from fastapi_sqlalchemy import db, DBSessionMiddleware
+
+# Define a FastAPI application.
+fastapi_app = FastAPI()
+
+# Add SQLAlchemy integration middleware to the FastAPI application.
+fastapi_app.add_middleware(
+    DBSessionMiddleware, db_url='sqlite:///:memory:'
+)
+
+# Build the middleware stack (this happens when you run the app).
+fastapi_app.build_middleware_stack()
+
+# Define an adapter for the scoped session.
+class FastapiScopedSession:
+    def __getattribute__(self, item: str) -> None:
+        return getattr(db.session, item)
+
+# Produce the topic of the scoped session adapter class.
+scoped_session_adapter_topic = get_topic(FlaskScopedSession)
+
+# Construct an event-sourced application within a scoped session.
+with db(commit_on_exit=True):
+    es_app = Application(
+        env={"SQLALCHEMY_SCOPED_SESSION_TOPIC": get_topic(FastapiScopedSession)}
+    )
+
+# Create a new event-sourced aggregate.
+with db(commit_on_exit=True):  # This happens automatically before handling a route.
+    # Handle request.
+    aggregate = Aggregate()
+    es_app.save(aggregate)
+    es_app.repository.get(aggregate.id)
+
+# The aggregate has been committed.
+with db(commit_on_exit=True):  # This happens automatically in a route.
+    # Handle request.
+    es_app.repository.get(aggregate.id)
+
+# Raise exception after creating aggregate.
+try:
+    with db(commit_on_exit=True):
+        # Handle request.
+        aggregate = Aggregate()
+        es_app.save(aggregate)
+        es_app.repository.get(aggregate.id)
+        raise TypeError("An error occurred!!!")
+except TypeError:
+    # Web framework returns an error.
+    ...
+else:
+    raise Exception("Expected type error")
+
+# The aggregate hasn't been committed.
+with db(commit_on_exit=True):
+    try:
+        es_app.repository.get(aggregate.id)
+    except AggregateNotFound:
+        pass
+    else:
+        raise Exception("Expected aggregate not found")
+```
+
 
 
 ## Google Cloud SQL Python Connector

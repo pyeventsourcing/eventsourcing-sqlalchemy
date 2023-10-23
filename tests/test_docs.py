@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
-import sys
 from pathlib import Path
-from subprocess import PIPE, Popen
 from tempfile import NamedTemporaryFile
 from unittest.case import TestCase
 
@@ -133,30 +131,35 @@ class TestDocs(TestCase):
 
         # Write the code into a temp file.
         tempfile = NamedTemporaryFile("w+")
-        temp_path = tempfile.name
-        tempfile.writelines("\n".join(lines) + "\n")
+        source = "\n".join(lines) + "\n"
+        tempfile.writelines(source)
         tempfile.flush()
 
-        # Run the code and catch errors.
-        p = Popen(
-            [sys.executable, temp_path],
-            stdout=PIPE,
-            stderr=PIPE,
-            env={"PYTHONPATH": BASE_DIR},
+        exec(
+            compile(source=source, filename=doc_path, mode="exec"), globals(), globals()
         )
-        outb, errb = p.communicate()
-        out = outb.decode("utf8")
-        err = errb.decode("utf8")
-        out = out.replace(temp_path, str(doc_path))
-        err = err.replace(temp_path, str(doc_path))
-        exit_status = p.wait()
+        return
 
-        print(out)
-        print(err)
-
-        # Check for errors running the code.
-        if exit_status:
-            self.fail(out + err)
-
-        # Close (deletes) the tempfile.
-        tempfile.close()
+        # # Run the code and catch errors.
+        # p = Popen(
+        #     [sys.executable, temp_path],
+        #     stdout=PIPE,
+        #     stderr=PIPE,
+        #     env={"PYTHONPATH": BASE_DIR},
+        # )
+        # outb, errb = p.communicate()
+        # out = outb.decode("utf8")
+        # err = errb.decode("utf8")
+        # out = out.replace(temp_path, str(doc_path))
+        # err = err.replace(temp_path, str(doc_path))
+        # exit_status = p.wait()
+        #
+        # print(out)
+        # print(err)
+        #
+        # # Check for errors running the code.
+        # if exit_status:
+        #     self.fail(out + err)
+        #
+        # # Close (deletes) the tempfile.
+        # tempfile.close()
