@@ -17,6 +17,7 @@ from eventsourcing_sqlalchemy.recorders import (
 
 class Factory(InfrastructureFactory):
     SQLALCHEMY_URL = "SQLALCHEMY_URL"
+    SQLALCHEMY_SCOPED_SESSION = "SQLALCHEMY_SCOPED_SESSION"
     SQLALCHEMY_AUTOFLUSH = "SQLALCHEMY_AUTOFLUSH"
     SQLALCHEMY_CONNECTION_CREATOR_TOPIC = "SQLALCHEMY_CONNECTION_CREATOR_TOPIC"
     CREATE_TABLE = "CREATE_TABLE"
@@ -29,12 +30,12 @@ class Factory(InfrastructureFactory):
     def __init__(self, env: Environment):
         super().__init__(env)
         db_url = self.env.get(self.SQLALCHEMY_URL)
-        if db_url is None:
-            raise EnvironmentError(
-                "SQLAlchemy URL not found "
-                "in environment with keys: "
-                f"{', '.join(self.env.create_keys(self.SQLALCHEMY_URL))!r}"
-            )
+        # if db_url is None:
+        #     raise EnvironmentError(
+        #         "SQLAlchemy URL not found "
+        #         "in environment with keys: "
+        #         f"{', '.join(self.env.create_keys(self.SQLALCHEMY_URL))!r}"
+        #     )
 
         autoflush = strtobool(self.env.get(self.SQLALCHEMY_AUTOFLUSH) or "True")
 
@@ -65,7 +66,7 @@ class Factory(InfrastructureFactory):
         recorder = self.application_recorder_class(
             datastore=self.datastore, events_table_name=events_table_name
         )
-        if self.env_create_table():
+        if self.env_create_table() and recorder.datastore.engine is not None:
             recorder.create_table()
         return recorder
 

@@ -50,6 +50,7 @@ class SQLAlchemyAggregateRecorder(AggregateRecorder):
         return self.datastore.transaction(commit=commit)
 
     def create_table(self) -> None:
+        assert self.datastore.engine is not None
         self.stored_events_table.create(self.datastore.engine, checkfirst=True)
 
     def insert_events(
@@ -84,6 +85,7 @@ class SQLAlchemyAggregateRecorder(AggregateRecorder):
             return None
 
     def _lock_table(self, session: Session) -> None:
+        assert self.datastore.engine is not None
         if self.datastore.engine.dialect.name == "postgresql":
             session.execute(
                 text(f"LOCK TABLE {self.events_table_name} IN EXCLUSIVE MODE")
@@ -145,17 +147,16 @@ class SQLAlchemyApplicationRecorder(SQLAlchemyAggregateRecorder, ApplicationReco
         return notification_ids
 
     def max_notification_id(self) -> int:
-        with self.transaction(commit=False) as session:
-            # record_class = cast(Type[StoredEventRecord], self.events_record_cls)
-            record_class = self.events_record_cls
-            q = session.query(record_class)
-            q = q.order_by(record_class.id.desc())
-            records = q[0:1]
-            try:
-                max_id = records[0].id
-            except IndexError:
-                max_id = 0
-        return max_id
+        try:
+            with self.transaction(commit=False) as session:
+                # record_class = cast(Type[StoredEventRecord], self.events_record_cls)
+                record_class = self.events_record_cls
+                q = session.query(record_class)
+                q = q.order_by(record_class.id.desc())
+                records = q[0:1]
+                return records[0].id
+        except (IndexError, AssertionError):
+            return 0
 
     def select_notifications(
         self,

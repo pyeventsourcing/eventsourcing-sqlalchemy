@@ -2,7 +2,7 @@
 import sqlite3
 from contextvars import ContextVar, Token
 from threading import Lock, Semaphore
-from typing import Any, Dict, Optional, Tuple, Type, TypeVar, cast
+from typing import Any, Dict, Optional, Tuple, Type, TypeVar, Union, cast
 
 import sqlalchemy.exc
 from eventsourcing.persistence import (
@@ -17,8 +17,9 @@ from eventsourcing.persistence import (
     ProgrammingError,
 )
 from sqlalchemy import Index, text
+from sqlalchemy.engine.base import Connection, Engine
 from sqlalchemy.future import create_engine
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import Session, scoped_session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from eventsourcing_sqlalchemy.models import (  # type: ignore
@@ -35,33 +36,44 @@ transactions: ContextVar["Transaction"] = ContextVar("transactions")
 
 
 class Transaction:
-    def __init__(self, session: Session, commit: bool, lock: Optional[Semaphore]):
+    def __init__(
+        self,
+        session: Session,
+        commit: bool,
+        lock: Optional[Semaphore],
+        is_scoped_session: bool = False,
+    ):
         self.session = session
         self.commit = commit
         self.lock = lock
         self.nested_level = 0
         self.token: Optional[Token["Transaction"]] = None
+        self.is_scoped_session = is_scoped_session
 
     def __enter__(self) -> Session:
         if self.nested_level == 0:
-            self.session.begin()
+            if not self.is_scoped_session:
+                self.session.begin()
         self.nested_level += 1
         return self.session
 
-    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:  # noqa C901
         self.nested_level -= 1
         if self.nested_level == 0:
             try:
                 if exc_val:
-                    self.session.rollback()
+                    if not self.is_scoped_session:
+                        self.session.rollback()
                     raise exc_val
                 elif not self.commit:
                     try:
-                        self.session.rollback()
+                        if not self.is_scoped_session:
+                            self.session.rollback()
                     except sqlite3.OperationalError:
                         pass
                 else:
-                    self.session.commit()
+                    if not self.is_scoped_session:
+                        self.session.commit()
             except sqlalchemy.exc.InterfaceError as e:
                 raise InterfaceError from e
             except sqlalchemy.exc.DataError as e:
@@ -84,12 +96,13 @@ class Transaction:
             except sqlalchemy.exc.SQLAlchemyError as e:
                 raise PersistenceError from e
             finally:
-                self.session.close()
                 if self.lock is not None:
                     # print(get_ident(), "releasing lock")
                     self.lock.release()
-            assert self.token is not None
-            transactions.reset(self.token)
+                if not self.is_scoped_session:
+                    self.session.close()
+                    assert self.token is not None
+                    transactions.reset(self.token)
 
 
 class SQLAlchemyDatastore:
@@ -106,14 +119,21 @@ class SQLAlchemyDatastore:
         autoflush: bool = True,
         **engine_kwargs: Any,
     ):
+        self.scoped_session: Optional[scoped_session] = None
+        self.is_sqlite_in_memory_db = False
+        self.is_sqlite_filedb = False
+        self.is_sqlite_wal_mode = False
         self.access_lock: Optional[Semaphore] = None
         self.write_lock: Optional[Semaphore] = None
-        self.is_sqlite_in_memory_db = False
+        self._tried_init_sqlite_wal_mode = False
+        self._wal_mode_lock = Lock()
 
         if session_maker is not None:
-            self.session_maker = session_maker
-            self.engine = self.session_maker().get_bind()
-        elif url is not None:
+            self.session_maker: Optional[sessionmaker] = session_maker
+            self.engine: Optional[Union[Engine, Connection]] = (
+                self.session_maker().get_bind()
+            )
+        elif url:
             if url.startswith("sqlite"):
                 if ":memory:" in url or "mode=memory" in url:
                     engine_kwargs = dict(engine_kwargs)
@@ -130,22 +150,27 @@ class SQLAlchemyDatastore:
 
             self.engine = create_engine(url, echo=False, **engine_kwargs)
             self.session_maker = sessionmaker(bind=self.engine, autoflush=autoflush)
-        else:
-            raise EnvironmentError(
-                "SQLAlchemyDatastore must be created with url or session_cls param"
-            )
 
-        self.is_sqlite_filedb = (
-            self.engine.dialect.name == "sqlite" and not self.is_sqlite_in_memory_db
-        )
-        self._tried_init_sqlite_wal_mode = False
-        self._wal_mode_lock = Lock()
-        self.is_sqlite_wal_mode = False
+            self.is_sqlite_filedb = (
+                self.engine.dialect.name == "sqlite" and not self.is_sqlite_in_memory_db
+            )
+        else:
+            self.engine = None
+            self.session_maker = None
+
+    def set_scoped_session(self, session: scoped_session) -> None:
+        # assert isinstance(session, scoped_session)
+        self.scoped_session = session
+        self.access_lock = None
+        self.write_lock = None
+        self.engine = self.scoped_session.get_bind()
+        self.session_maker = None  # self.scoped_session.session_factory
 
     def init_sqlite_wal_mode(self) -> None:
         self._tried_init_sqlite_wal_mode = True
         if self.is_sqlite_filedb and not self.is_sqlite_wal_mode:
             with self._wal_mode_lock:
+                assert self.engine is not None
                 with self.engine.connect() as connection:
                     cursor_result = connection.execute(text("PRAGMA journal_mode=WAL;"))
                     if list(cursor_result)[0][0] == "wal":
@@ -169,9 +194,19 @@ class SQLAlchemyDatastore:
                 self.write_lock.acquire()
                 # print(get_ident(), "got lock")
                 lock = self.write_lock
-            session = self.session_maker()
-            transaction = Transaction(session, commit=commit, lock=lock)
-            transaction.token = transactions.set(transaction)
+            if self.scoped_session is None:
+                assert self.session_maker is not None
+                session = self.session_maker()
+            else:
+                session = self.scoped_session
+            transaction = Transaction(
+                session,
+                commit=commit,
+                lock=lock,
+                is_scoped_session=self.scoped_session is not None,
+            )
+            if self.scoped_session is None:
+                transaction.token = transactions.set(transaction)
         return transaction
 
     @classmethod

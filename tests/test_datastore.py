@@ -17,6 +17,6 @@ class TestDatastore(TestCase):
         datastore = SQLAlchemyDatastore(session_maker=session_maker)
         self.assertIsInstance(datastore, SQLAlchemyDatastore)
 
-    def test_should_raise_exception_without_url_or_session_cls(self) -> None:
-        with self.assertRaises(EnvironmentError):
-            SQLAlchemyDatastore()
+    # def test_should_raise_exception_without_url_or_session_cls(self) -> None:
+    #     with self.assertRaises(EnvironmentError):
+    #         SQLAlchemyDatastore()
