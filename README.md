@@ -351,7 +351,7 @@ with db(commit_on_exit=True):  # This happens automatically before handling a ro
     es_app.repository.get(aggregate.id)
 
 # The aggregate has been committed.
-with db(commit_on_exit=True):  # This happens automatically in a route.
+with db(commit_on_exit=True):  # This happens automatically before handling a route.
     # Handle request.
     es_app.repository.get(aggregate.id)
 
