@@ -12,9 +12,9 @@ with [SQLAlchemy](https://www.sqlalchemy.org/).
 * [Installation](#installation)
 * [Getting started](#getting-started)
 * [Managing transactions outside the application](#managing-transactions-outside-the-application)
+* [Using SQLAlchemy scoped sessions](#using-sqlalchemy-scoped-sessions)
 * [Managing sessions with Flask-SQLAlchemy](#managing-sessions-with-flask-sqlalchemy)
 * [Managing sessions with FastAPI-SQLAlchemy](#managing-sessions-with-fastapi-sqlalchemy)
-* [Using SQLAlchemy scoped sessions](#using-sqlalchemy-scoped-sessions)
 * [Google Cloud SQL Python Connector](#google-cloud-sql-python-connector)
 * [More information](#more-information)
 <!-- TOC -->
