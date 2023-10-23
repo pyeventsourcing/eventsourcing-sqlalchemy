@@ -279,18 +279,18 @@ class FlaskScopedSession:
     def __getattribute__(self, item: str) -> None:
         return getattr(db.session, item)
 
-# Produce the topic of the scoped session adapter class.
-scoped_session_adapter_topic = get_topic(FlaskScopedSession)
 
-# Construct an event-sourced application within a Flask application context.
+# Run the Flask application in a Web application server.
 with flask_app.app_context():
+
+    # Produce the topic of the scoped session adapter class.
+    scoped_session_adapter_topic = get_topic(FlaskScopedSession)
+    # Construct event-sourced application to use scoped sessions.
     es_app = Application(
         env={"SQLALCHEMY_SCOPED_SESSION_TOPIC": scoped_session_adapter_topic}
     )
 
-# Process requests.
-with flask_app.app_context():
-    # During the request.
+    # During request.
     aggregate = Aggregate()
     es_app.save(aggregate)
     db.session.commit()
@@ -310,7 +310,9 @@ with flask_app.app_context():
 The package [FastAPI-SQLAlchemy](https://github.com/mfreeborn/fastapi-sqlalchemy)
 doesn't actually use an SQLAlchemy `scoped_session`, but instead has a global `db`
 variable that has a `session` attribute which returns request-scoped sessions when
-accessed. This can be adapted in a similar way.
+accessed. This can be adapted in a similar way. Sessions are committed automatically
+after the request has been handled successfully, and not committed if an exception
+is raised.
 
 ```python
 from fastapi import FastAPI
@@ -324,7 +326,7 @@ fastapi_app.add_middleware(
     DBSessionMiddleware, db_url='sqlite:///:memory:'
 )
 
-# Build the middleware stack (this happens when you run the app).
+# Build the middleware stack (happens automatically when the FastAPI app runs in a Web app server).
 fastapi_app.build_middleware_stack()
 
 # Define an adapter for the scoped session.
@@ -332,11 +334,11 @@ class FastapiScopedSession:
     def __getattribute__(self, item: str) -> None:
         return getattr(db.session, item)
 
-# Produce the topic of the scoped session adapter class.
-scoped_session_adapter_topic = get_topic(FlaskScopedSession)
-
 # Construct an event-sourced application within a scoped session.
 with db(commit_on_exit=True):
+    # Produce the topic of the scoped session adapter class.
+    scoped_session_adapter_topic = get_topic(FlaskScopedSession)
+    # Construct event-sourced application to use scoped sessions.
     es_app = Application(
         env={"SQLALCHEMY_SCOPED_SESSION_TOPIC": get_topic(FastapiScopedSession)}
     )
