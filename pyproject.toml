@@ -47,7 +47,7 @@ psycopg2-binary = "*"
 pytest = "*"
 pytest-cov = "*"
 sqlalchemy-stubs = "*"
-pycryptodome = "~3.16.0"
+pycryptodome = "~3.19.1"
 cloud-sql-python-connector = { version = "*", extras=["pg8000"]}
 aiohttp = "3.9.0b0"  # Remove this when 3.9 is released (added 22/10/2023).
 fastapi_sqlalchemy = "*"
