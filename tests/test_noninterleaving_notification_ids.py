@@ -58,15 +58,14 @@ class TestNonInterleavingPostgres(TestNonInterleaving):
         super().tearDown()
 
     def drop_tables(self) -> None:
-        datastore = PostgresDatastore(
+        with PostgresDatastore(
             dbname="eventsourcing_sqlalchemy",
             host="127.0.0.1",
             port="5432",
             user="eventsourcing",
             password="eventsourcing",
-        )
-        drop_postgres_table(datastore, "stored_events")
-        drop_postgres_table(datastore, "stored_events")
+        ) as datastore:
+            drop_postgres_table(datastore, "stored_events")
 
 
 del NonInterleavingNotificationIDsBaseCase

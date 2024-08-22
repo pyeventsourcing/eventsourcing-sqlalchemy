@@ -124,6 +124,11 @@ class TestDocs(TestCase):
                         num_code_lines += 1
                 else:
                     line = ""
+
+                # Avoid breaking tests with DefaultCredentialsError.
+                if "connector = Connector()" in line:
+                    line = ""
+
                 lines.append(line)
                 last_line = orig_line
 

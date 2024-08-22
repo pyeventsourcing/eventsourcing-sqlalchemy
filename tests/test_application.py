@@ -2,7 +2,7 @@
 import os
 from unittest import TestCase
 
-from eventsourcing.application import AggregateNotFound, Application
+from eventsourcing.application import AggregateNotFoundError, Application
 from eventsourcing.domain import Aggregate
 from eventsourcing.postgres import PostgresDatastore
 from eventsourcing.tests.application import TIMEIT_FACTOR, ExampleApplicationTestCase
@@ -146,7 +146,7 @@ class TestApplicationWithSQLAlchemy(ExampleApplicationTestCase):
         session.remove()
 
         # Handle request.
-        with self.assertRaises(AggregateNotFound):
+        with self.assertRaises(AggregateNotFoundError):
             # forgot to commit
             app.repository.get(aggregate.id)
 
@@ -236,7 +236,7 @@ class TestApplicationWithSQLAlchemy(ExampleApplicationTestCase):
             es_app.repository.get(aggregate.id)
 
         with db():
-            with self.assertRaises(AggregateNotFound):
+            with self.assertRaises(AggregateNotFoundError):
                 es_app.repository.get(aggregate.id)
 
     #
@@ -272,15 +272,14 @@ class TestWithPostgres(TestApplicationWithSQLAlchemy):
         super().tearDown()
 
     def drop_tables(self) -> None:
-        datastore = PostgresDatastore(
+        with PostgresDatastore(
             dbname="eventsourcing_sqlalchemy",
             host="127.0.0.1",
             port="5432",
             user="eventsourcing",
             password="eventsourcing",
-        )
-        drop_postgres_table(datastore, "bankaccounts_events")
-        drop_postgres_table(datastore, "bankaccounts_events")
+        ) as datastore:
+            drop_postgres_table(datastore, "bankaccounts_events")
 
 
 class TestWithConnectionCreatorTopic(TestCase):
