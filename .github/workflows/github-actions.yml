@@ -21,7 +21,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Set up cache
         id: cached-dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: /home/runner/.local
           key: os-${{ matrix.os }}-python-${{ matrix.python-version }}-${{ matrix.sqlalchemy-version }}-${{ hashFiles('**/poetry.lock') }}-poetry-1.6.1
@@ -53,7 +53,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Set up cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: /home/runner/.local
           key: os-${{ matrix.os }}-python-${{ matrix.python-version }}-${{ matrix.sqlalchemy-version }}-${{ hashFiles('**/poetry.lock') }}-poetry-1.6.1
@@ -90,7 +90,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Set up cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: /home/runner/.local
           key: os-${{ matrix.os }}-python-${{ matrix.python-version }}-${{matrix.sqlalchemy-version }}-${{ hashFiles('**/poetry.lock') }}-poetry-1.6.1
