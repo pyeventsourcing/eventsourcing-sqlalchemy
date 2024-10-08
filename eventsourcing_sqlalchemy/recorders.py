@@ -174,6 +174,7 @@ class SQLAlchemyApplicationRecorder(SQLAlchemyAggregateRecorder, ApplicationReco
                 q = q.filter(record_class.id <= stop)
             if topics:
                 q = q.filter(record_class.topic.in_(topics))
+            q = q.order_by(record_class.id)  # Make it an index scan
             q = q[0:limit]
 
             notifications = [
