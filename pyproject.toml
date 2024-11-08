@@ -13,6 +13,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python",
@@ -44,7 +45,8 @@ isort = "*"
 mypy = "*"
 pre-commit = "*"
 pre-commit-hooks = "*"
-eventsourcing = { version = "~9.3", extras = ["crypto", "postgres"] }
+eventsourcing = { version = "~9.3", extras = ["crypto"] }
+psycopg = { version = "*", extras = ["binary", "pool"] }
 psycopg2-binary = "*"
 pytest = "*"
 pytest-cov = "*"
