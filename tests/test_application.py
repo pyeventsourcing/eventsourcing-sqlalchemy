@@ -282,6 +282,27 @@ class TestWithPostgres(TestApplicationWithSQLAlchemy):
             drop_postgres_table(datastore, "bankaccounts_events")
 
 
+class TestWithPostgresSchema(TestWithPostgres):
+    def setUp(self) -> None:
+        super().setUp()
+        os.environ["SQLALCHEMY_SCHEMA"] = "myschema"
+
+    def tearDown(self) -> None:
+        super().tearDown()
+        if "SQLALCHEMY_SCHEMA" in os.environ:
+            del os.environ["SQLALCHEMY_SCHEMA"]
+
+    def drop_tables(self) -> None:
+        with PostgresDatastore(
+            dbname="eventsourcing_sqlalchemy",
+            host="127.0.0.1",
+            port="5432",
+            user="eventsourcing",
+            password="eventsourcing",
+        ) as datastore:
+            drop_postgres_table(datastore, "myschema.bankaccounts_events")
+
+
 class TestWithConnectionCreatorTopic(TestCase):
     def test(self) -> None:
         class MyCreatorException(Exception):

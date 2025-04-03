@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
+from __future__ import annotations
+
 import sqlite3
 from contextvars import ContextVar, Token
 from threading import Lock, Semaphore
-from typing import Any, Dict, Optional, Tuple, Type, TypeVar, Union, cast
+from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union, cast
 
 import sqlalchemy.exc
 from eventsourcing.persistence import (
@@ -215,17 +217,22 @@ class SQLAlchemyDatastore:
 
     @classmethod
     def define_record_class(
-        cls, cls_name: str, table_name: str, base_cls: Type[TEventRecord]
+        cls,
+        cls_name: str,
+        table_name: str,
+        schema_name: str | None,
+        base_cls: Type[TEventRecord],
     ) -> Type[TEventRecord]:
         try:
-            (record_class, record_base_cls) = cls.record_classes[table_name]
+            record_classes_key = (schema_name or "public") + "." + table_name
+            (record_class, record_base_cls) = cls.record_classes[record_classes_key]
             if record_base_cls is not base_cls:
                 raise ValueError(
                     f"Have already defined a record class with table name {table_name} "
                     f"from a different base class {record_base_cls}"
                 )
         except KeyError:
-            table_args = []
+            table_args: List[Any] = []
             for table_arg in base_cls.__dict__.get("__table_args__", []):
                 if isinstance(table_arg, Index):
                     new_index = Index(
@@ -236,6 +243,11 @@ class SQLAlchemyDatastore:
                     table_args.append(new_index)
                 else:
                     table_args.append(table_arg)
+            if schema_name is not None:
+                if table_args and isinstance(table_args[-1], dict):
+                    table_args[-1]["schema"] = schema_name
+                else:
+                    table_args.append({"schema": schema_name})
             record_class = type(
                 cls_name,
                 (base_cls,),
@@ -244,5 +256,5 @@ class SQLAlchemyDatastore:
                     "__table_args__": tuple(table_args),
                 },
             )
-            cls.record_classes[table_name] = (record_class, base_cls)
+            cls.record_classes[record_classes_key] = (record_class, base_cls)
         return cast(Type[TEventRecord], record_class)

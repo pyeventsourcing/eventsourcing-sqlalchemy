@@ -84,6 +84,12 @@ SQLAlchemy database URL for your database.
 Please refer to the [SQLAlchemy documentation](https://docs.sqlalchemy.org/en/14/core/engines.html)
 for more information about SQLAlchemy Database URLs.
 
+Optionally, you can also configure SQLAlchemy to use a database schema, by setting
+the environment variable `SQLALCHEMY_SCHEMA`. This is not supported on all databases,
+but has been tested with PostgreSQL.
+
+The example below uses SQLAlchemy with an in-memory SQLite database.
+
 ```python
 import os
 

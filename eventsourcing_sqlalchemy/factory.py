@@ -23,6 +23,7 @@ class Factory(InfrastructureFactory):
     SQLALCHEMY_AUTOFLUSH = "SQLALCHEMY_AUTOFLUSH"
     SQLALCHEMY_CONNECTION_CREATOR_TOPIC = "SQLALCHEMY_CONNECTION_CREATOR_TOPIC"
     SQLALCHEMY_SCOPED_SESSION_TOPIC = "SQLALCHEMY_SCOPED_SESSION_TOPIC"
+    SQLALCHEMY_SCHEMA = "SQLALCHEMY_SCHEMA"
     CREATE_TABLE = "CREATE_TABLE"
 
     datastore_class = SQLAlchemyDatastore
@@ -33,6 +34,7 @@ class Factory(InfrastructureFactory):
     def __init__(self, env: Environment):
         super().__init__(env)
 
+        self._schema_name = self.env.get(self.SQLALCHEMY_SCHEMA)
         get_scoped_session_topic = self.env.get(self.SQLALCHEMY_SCOPED_SESSION_TOPIC)
         session: Optional[scoped_session] = None
         if get_scoped_session_topic:
@@ -66,6 +68,7 @@ class Factory(InfrastructureFactory):
         recorder = self.aggregate_recorder_class(
             datastore=self.datastore,
             events_table_name=events_table_name,
+            schema_name=self._schema_name,
             for_snapshots=for_snapshots,
         )
         if self.env_create_table():
@@ -76,7 +79,9 @@ class Factory(InfrastructureFactory):
         prefix = self.env.name.lower() or "stored"
         events_table_name = prefix + "_events"
         recorder = self.application_recorder_class(
-            datastore=self.datastore, events_table_name=events_table_name
+            datastore=self.datastore,
+            events_table_name=events_table_name,
+            schema_name=self._schema_name,
         )
         if self.env_create_table() and recorder.datastore.engine is not None:
             recorder.create_table()
@@ -91,6 +96,7 @@ class Factory(InfrastructureFactory):
             datastore=self.datastore,
             events_table_name=events_table_name,
             tracking_table_name=tracking_table_name,
+            schema_name=self._schema_name,
         )
         if self.env_create_table():
             recorder.create_table()

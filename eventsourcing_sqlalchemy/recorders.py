@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import annotations
+
 from typing import Any, List, Optional, Sequence, Type, cast
 from uuid import UUID
 
@@ -25,13 +27,19 @@ class SQLAlchemyAggregateRecorder(AggregateRecorder):
         self,
         datastore: SQLAlchemyDatastore,
         events_table_name: str,
+        schema_name: str | None = None,
         for_snapshots: bool = False,
     ):
         super().__init__()
         self.datastore = datastore
         self.events_table_name = events_table_name
+        self.schema_name = schema_name
         record_cls_name = "".join(
-            [s.capitalize() for s in events_table_name.rstrip("s").split("_")]
+            [
+                s.capitalize()
+                for s in (schema_name or "").split("_")
+                + events_table_name.rstrip("s").split("_")
+            ]
         )
         if not for_snapshots:
             base_cls: Type[EventRecord] = self.datastore.base_stored_event_record_cls
@@ -42,6 +50,7 @@ class SQLAlchemyAggregateRecorder(AggregateRecorder):
         self.events_record_cls = self.datastore.define_record_class(
             cls_name=record_cls_name,
             table_name=self.events_table_name,
+            schema_name=self.schema_name,
             base_cls=base_cls,
         )
         self.stored_events_table = self.events_record_cls.__table__
@@ -87,9 +96,10 @@ class SQLAlchemyAggregateRecorder(AggregateRecorder):
     def _lock_table(self, session: Session) -> None:
         assert self.datastore.engine is not None
         if self.datastore.engine.dialect.name == "postgresql":
-            session.execute(
-                text(f"LOCK TABLE {self.events_table_name} IN EXCLUSIVE MODE")
-            )
+            events_table_name = self.events_table_name
+            if self.schema_name is not None:
+                events_table_name = f"{self.schema_name}.{events_table_name}"
+            session.execute(text(f"LOCK TABLE {events_table_name} IN EXCLUSIVE MODE"))
 
     def select_events(
         self,
@@ -198,12 +208,18 @@ class SQLAlchemyProcessRecorder(SQLAlchemyApplicationRecorder, ProcessRecorder):
         datastore: SQLAlchemyDatastore,
         events_table_name: str,
         tracking_table_name: str,
+        schema_name: str | None = None,
     ):
-        super().__init__(datastore=datastore, events_table_name=events_table_name)
+        super().__init__(
+            datastore=datastore,
+            events_table_name=events_table_name,
+            schema_name=schema_name,
+        )
         self.tracking_table_name = tracking_table_name
         self.tracking_record_cls = self.datastore.define_record_class(
             cls_name="NotificationTrackingRecord",
             table_name=self.tracking_table_name,
+            schema_name=self.schema_name,
             base_cls=datastore.base_notification_tracking_record_cls,
         )
         self.tracking_table: Table = self.tracking_record_cls.__table__
