@@ -4,7 +4,7 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 from unittest.case import TestCase
 
-BASE_DIR = Path(__file__).parents[1]
+from tests.utils import BASE_DIR
 
 
 class TestDocs(TestCase):

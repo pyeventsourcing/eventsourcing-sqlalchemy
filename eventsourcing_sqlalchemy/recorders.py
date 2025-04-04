@@ -95,11 +95,27 @@ class SQLAlchemyAggregateRecorder(AggregateRecorder):
 
     def _lock_table(self, session: Session) -> None:
         assert self.datastore.engine is not None
+        events_table_name = self.events_table_name
+        if self.schema_name is not None:
+            events_table_name = f"{self.schema_name}.{events_table_name}"
         if self.datastore.engine.dialect.name == "postgresql":
-            events_table_name = self.events_table_name
-            if self.schema_name is not None:
-                events_table_name = f"{self.schema_name}.{events_table_name}"
             session.execute(text(f"LOCK TABLE {events_table_name} IN EXCLUSIVE MODE"))
+        elif self.datastore.engine.dialect.name == "mssql":
+            pass
+            # This doesn't work to ensure insert and commit order are the same:
+            # session.connection(execution_options={"isolation_level": "SERIALIZABLE"})
+            # This avoids deadlocks from TABLOCK but together still doesn't ensure
+            # insert and commit order are the same:
+            # session.execute(text(f"SET LOCK_TIMEOUT 18;"))
+            # This gives deadlocks:
+            # session.execute(
+            #     text(
+            #         f"DECLARE  @HideSelectFromOutput TABLE ( DoNotOutput INT); "  # noqa E702
+            #         f"INSERT INTO @HideSelectFromOutput "
+            #         f"SELECT TOP 1 Id FROM {events_table_name} "
+            #         f"WITH (TABLOCK);"  # noqa E231
+            #     )
+            # )
 
     def select_events(
         self,

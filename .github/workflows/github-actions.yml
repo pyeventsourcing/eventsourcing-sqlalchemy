@@ -95,13 +95,22 @@ jobs:
           path: /home/runner/.local
           key: os-${{ matrix.os }}-python-${{ matrix.python-version }}-${{matrix.sqlalchemy-version }}-${{ hashFiles('**/poetry.lock') }}-poetry-1.6.1
 
-      - name: Setup database
+      - name: Setup PostgreSQL database
         run: |
           PGPASSWORD=postgres psql -c 'CREATE DATABASE eventsourcing_sqlalchemy;' -U postgres -h localhost
           PGPASSWORD=postgres psql -c "CREATE USER eventsourcing WITH PASSWORD 'eventsourcing';" -U postgres -h localhost
           PGPASSWORD=postgres psql -c "ALTER DATABASE eventsourcing_sqlalchemy OWNER TO eventsourcing;" -U postgres -h localhost
           PGPASSWORD=postgres psql eventsourcing_sqlalchemy -c "CREATE SCHEMA myschema AUTHORIZATION eventsourcing" -U postgres -h localhost
 
+      - name: Install Microsoft ODBC
+        run: sudo ACCEPT_EULA=Y apt-get install msodbcsql18 -y
+
+      - name: Setup MSSQL database
+        run: |
+          make start-mssql
+          sleep 10
+          make create-mssql-database
+          make create-mssql-schema
 
       - name: Print SQLAlchemy version
         run: poetry run python -c "import sqlalchemy; print(f'Using sqlalchemy {sqlalchemy.__version__}')"

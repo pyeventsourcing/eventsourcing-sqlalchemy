@@ -9,9 +9,11 @@ from eventsourcing.tests.application import TIMEIT_FACTOR, ExampleApplicationTes
 from eventsourcing.tests.postgres_utils import drop_postgres_table
 from eventsourcing.utils import clear_topic_cache, get_topic
 from fastapi_sqlalchemy import DBSessionMiddleware
+from sqlalchemy.engine.url import URL
 from sqlalchemy.orm import scoped_session
 
 from eventsourcing_sqlalchemy.factory import Factory
+from tests.utils import drop_mssql_table
 
 try:
     from sqlalchemy.orm import declarative_base  # type: ignore
@@ -301,6 +303,78 @@ class TestWithPostgresSchema(TestWithPostgres):
             password="eventsourcing",
         ) as datastore:
             drop_postgres_table(datastore, "myschema.bankaccounts_events")
+
+
+class TestWithMSSQL(TestApplicationWithSQLAlchemy):
+    """
+    On MacOS: need to run `brew install unixodbc`
+    brew tap microsoft/mssql-release https://github.com/Microsoft/homebrew-mssql-release
+    brew update
+    HOMEBREW_ACCEPT_EULA=Y brew install msodbcsql18 mssql-tools18
+
+    docker exec -it sql2022 "bash"
+    /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P Password1
+    CREATE DATABASE eventsourcing_sqlalchemy;
+    GO
+    USE eventsourcing_sqlalchemy;
+    GO
+    SELECT * FROM bankaccounts_events;
+    GO
+    SELECT convert(varchar(max),state) FROM bankaccounts_events;
+    GO
+
+    docker exec -it sql2022 "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P Password1" -No
+
+    -q "SELECT * FROM AdventureWorks2022.Person.Person"
+
+
+    """
+
+    timeit_number = 5 * TIMEIT_FACTOR
+    sqlalchemy_database_url = URL.create(  # type: ignore[attr-defined]
+        "mssql+pyodbc",
+        username="sa",
+        password="Password1",
+        host="localhost",
+        port=1433,
+        database="eventsourcing_sqlalchemy",
+        query={
+            "driver": "ODBC Driver 18 for SQL Server",
+            "TrustServerCertificate": "yes",
+            # "authentication": "ActiveDirectoryIntegrated",
+        },
+    ).render_as_string(hide_password=False)
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.drop_tables()
+
+    def tearDown(self) -> None:
+        self.drop_tables()
+        super().tearDown()
+
+    def test_example_application(self) -> None:
+        super().test_example_application()
+
+    def drop_tables(self) -> None:
+        drop_mssql_table("bankaccounts_events")
+
+
+class TestWithMSSQLSchema(TestWithMSSQL):
+    def setUp(self) -> None:
+        super().setUp()
+        os.environ["SQLALCHEMY_SCHEMA"] = "myschema"
+
+    def tearDown(self) -> None:
+        super().tearDown()
+        if "SQLALCHEMY_SCHEMA" in os.environ:
+            del os.environ["SQLALCHEMY_SCHEMA"]
+
+    def test_example_application(self) -> None:
+        super().test_example_application()
+
+    def drop_tables(self) -> None:
+        drop_mssql_table("myschema.bankaccounts_events")
 
 
 class TestWithConnectionCreatorTopic(TestCase):

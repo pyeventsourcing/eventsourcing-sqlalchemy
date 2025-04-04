@@ -117,3 +117,58 @@ build:
 .PHONY: publish
 publish:
 	$(POETRY) publish
+
+.PHONY: start-mssql
+start-mssql:
+	docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=Password1" \
+      -p 1433:1433 --name sql2022 --hostname localhost \
+      -d \
+      mcr.microsoft.com/mssql/server:2022-latest
+
+.PHONY: stop-mssql
+stop-mssql:
+	docker stop sql2022
+	docker rm sql2022
+
+.PHONY: mssql-sqlcmd-help
+mssql-sqlcmd-help:
+	docker exec -it sql2022 "/opt/mssql-tools18/bin/sqlcmd" \
+    -?
+
+.PHONY: mssql-sqlcmd
+mssql-sqlcmd:
+	docker exec -it sql2022 "/opt/mssql-tools18/bin/sqlcmd" \
+    -S localhost -U sa -P Password1 -No
+
+.PHONY: create-mssql-database
+create-mssql-database:
+	docker exec sql2022 "/opt/mssql-tools18/bin/sqlcmd" \
+    -S localhost -U sa -P Password1 -No \
+    -q "CREATE DATABASE eventsourcing_sqlalchemy;"
+
+.PHONY: drop-mssql-database
+drop-mssql-database:
+	docker exec sql2022 "/opt/mssql-tools18/bin/sqlcmd" \
+    -S localhost -U sa -P Password1 -No \
+    -q "DROP DATABASE eventsourcing_sqlalchemy;"
+
+.PHONY: create-mssql-schema
+create-mssql-schema:
+	docker exec sql2022 "/opt/mssql-tools18/bin/sqlcmd" \
+    -S localhost -U sa -P Password1 -No \
+    -d eventsourcing_sqlalchemy \
+    -q "CREATE SCHEMA myschema;"
+
+.PHONY: drop-mssql-schema
+drop-mssql-schema:
+	docker exec sql2022 "/opt/mssql-tools18/bin/sqlcmd" \
+    -S localhost -U sa -P Password1 -No \
+    -d eventsourcing_sqlalchemy \
+    -q "DROP SCHEMA myschema;"
+
+.PHONY: drop-mssql-table
+drop-mssql-table:
+	docker exec sql2022 "/opt/mssql-tools18/bin/sqlcmd" \
+    -S localhost -U sa -P Password1 -No \
+    -d eventsourcing_sqlalchemy \
+    -q "DROP TABLE $(name);"

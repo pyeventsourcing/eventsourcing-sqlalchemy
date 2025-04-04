@@ -55,6 +55,11 @@ class Transaction:
     def __enter__(self) -> Session:
         if self.nested_level == 0:
             if not self.is_scoped_session:
+                # This doesn't work to ensure commit and insert order are the same:
+                # if self.commit:
+                #     self.session.execute(text("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE"))
+                # else:
+                #     self.session.begin()
                 self.session.begin()
         self.nested_level += 1
         return self.session
@@ -77,26 +82,26 @@ class Transaction:
                     if not self.is_scoped_session:
                         self.session.commit()
             except sqlalchemy.exc.InterfaceError as e:
-                raise InterfaceError from e
+                raise InterfaceError(e) from e
             except sqlalchemy.exc.DataError as e:
-                raise DataError from e
+                raise DataError(e) from e
             except sqlalchemy.exc.OperationalError as e:
                 if isinstance(e.args[0], sqlite3.OperationalError) and self.lock:
                     pass
                 else:
-                    raise OperationalError from e
+                    raise OperationalError(e) from e
             except sqlalchemy.exc.IntegrityError as e:
-                raise IntegrityError from e
+                raise IntegrityError(e) from e
             except sqlalchemy.exc.InternalError as e:
-                raise InternalError from e
+                raise InternalError(e) from e
             except sqlalchemy.exc.ProgrammingError as e:
-                raise ProgrammingError from e
+                raise ProgrammingError(e) from e
             except sqlalchemy.exc.NotSupportedError as e:
-                raise NotSupportedError from e
+                raise NotSupportedError(e) from e
             except sqlalchemy.exc.DatabaseError as e:
-                raise DatabaseError from e
+                raise DatabaseError(e) from e
             except sqlalchemy.exc.SQLAlchemyError as e:
-                raise PersistenceError from e
+                raise PersistenceError(e) from e
             finally:
                 if self.lock is not None:
                     # print(get_ident(), "releasing lock")

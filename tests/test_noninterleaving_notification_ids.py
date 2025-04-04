@@ -6,9 +6,11 @@ from eventsourcing.tests.persistence import (
     tmpfile_uris,
 )
 from eventsourcing.tests.postgres_utils import drop_postgres_table
+from sqlalchemy.engine.url import URL
 
 from eventsourcing_sqlalchemy.datastore import SQLAlchemyDatastore
 from eventsourcing_sqlalchemy.recorders import SQLAlchemyApplicationRecorder
+from tests.utils import drop_mssql_table
 
 
 class TestNonInterleaving(NonInterleavingNotificationIDsBaseCase):
@@ -66,6 +68,40 @@ class TestNonInterleavingPostgres(TestNonInterleaving):
             password="eventsourcing",
         ) as datastore:
             drop_postgres_table(datastore, "stored_events")
+
+
+class TestNonInterleavingMSSQL(TestNonInterleaving):
+    insert_num = 5000
+    sqlalchemy_db_url = URL.create(  # type: ignore[attr-defined]
+        "mssql+pyodbc",
+        username="sa",
+        password="Password1",
+        host="localhost",
+        port=1433,
+        database="eventsourcing_sqlalchemy",
+        query={
+            "driver": "ODBC Driver 18 for SQL Server",
+            "TrustServerCertificate": "yes",
+            # "authentication": "ActiveDirectoryIntegrated",
+        },
+    ).render_as_string(hide_password=False)
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.drop_tables()
+
+    def tearDown(self) -> None:
+        self.drop_tables()
+        super().tearDown()
+
+    def test(self) -> None:
+        with self.assertRaises(
+            AssertionError, msg="Somehow MSSQL didn't interleave events"
+        ):
+            super().test()
+
+    def drop_tables(self) -> None:
+        drop_mssql_table("stored_events")
 
 
 del NonInterleavingNotificationIDsBaseCase
