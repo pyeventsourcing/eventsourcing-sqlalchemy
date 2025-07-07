@@ -33,8 +33,10 @@ jobs:
       - name: Install packages
         run: make install
       - name: Downgrade SQLAlchemy
+        if: ${{ matrix.sqlalchemy-version != 'default' }}
         run: poetry@2.1.2 run pip install -U "sqlalchemy${{ matrix.sqlalchemy-version }}"
       - name: Downgrade Flask-SQLAlchemy
+        if: ${{ matrix.sqlalchemy-version != 'default' }}
         run: poetry@2.1.2 run pip install -U "flask-sqlalchemy<3.1"
       - name: Lint
         run: make lint
