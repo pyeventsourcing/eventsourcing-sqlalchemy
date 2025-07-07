@@ -8,8 +8,7 @@ jobs:
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
         sqlalchemy-version: ["<2.0", "default"]
-        os: [ubuntu-20.04]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     services:
       postgres:
         image: postgres:13.4
