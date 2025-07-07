@@ -24,7 +24,7 @@ repository = "https://github.com/pyeventsourcing/eventsourcing-sqlalchemy"
 include = ["eventsourcing_sqlalchemy/py.typed"]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.9"
 #eventsourcing = { path = "../eventsourcing/", extras = ["crypto"] }
 #eventsourcing = { path = "../eventsourcing/", extras = ["crypto"], develop = true }
 #eventsourcing = { git = "https://github.com/pyeventsourcing/eventsourcing.git", branch = "main", extras = ["crypto"]}
@@ -64,7 +64,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.black]
 line-length = 88
-target-version = ["py38"]
+target-version = ["py39"]
 include = '\.pyi?$'
 preview = true
 exclude = '''

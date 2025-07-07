@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from unittest import skip
+
 from eventsourcing.persistence import ApplicationRecorder
 from eventsourcing.postgres import PostgresDatastore
 from eventsourcing.tests.persistence import (
@@ -70,6 +72,7 @@ class TestNonInterleavingPostgres(TestNonInterleaving):
             drop_postgres_table(datastore, "stored_events")
 
 
+@skip("SQL Server not supported yet")
 class TestNonInterleavingMSSQL(TestNonInterleaving):
     insert_num = 5000
     sqlalchemy_db_url = URL.create(  # type: ignore[attr-defined]

@@ -1,71 +1,12 @@
 name: CI
 on: [push, pull_request]
 
-env:
-  POETRY_HOME: /home/runner/.local
-  POETRY_CACHE_DIR: /home/runner/.local/.cache
-
 jobs:
-  prepare:
+  lint-and-test:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
-        sqlalchemy-version: ["<2.0", "default"]
-        os: [ubuntu-20.04]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Set up cache
-        id: cached-dependencies
-        uses: actions/cache@v4
-        with:
-          path: /home/runner/.local
-          key: os-${{ matrix.os }}-python-${{ matrix.python-version }}-${{ matrix.sqlalchemy-version }}-${{ hashFiles('**/poetry.lock') }}-poetry-1.6.1
-      - name: Install and set up Poetry
-        if: steps.cached-dependencies.outputs.cache-hit != 'true'
-        run: make install-poetry
-      - name: Install packages
-        if: steps.cached-dependencies.outputs.cache-hit != 'true'
-        run: make install-packages opts="--no-root"
-      - name: Downgrade SQLAlchemy
-        if: ${{ matrix.sqlalchemy-version != 'default' }}
-        run: poetry run pip install -U "sqlalchemy${{ matrix.sqlalchemy-version }}"
-      - name: Downgrade Flask-SQLAlchemy
-        if: ${{ matrix.sqlalchemy-version != 'default' }}
-        run: poetry run pip install -U "flask-sqlalchemy<3.1"
-
-  lint:
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
-        sqlalchemy-version: ["<2.0", "default"]
-        os: [ubuntu-20.04]
-    runs-on: ${{ matrix.os }}
-    needs: prepare
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Set up cache
-        uses: actions/cache@v4
-        with:
-          path: /home/runner/.local
-          key: os-${{ matrix.os }}-python-${{ matrix.python-version }}-${{ matrix.sqlalchemy-version }}-${{ hashFiles('**/poetry.lock') }}-poetry-1.6.1
-      - name: Lint
-        run: make lint
-
-  tests:
-    needs: prepare
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
         sqlalchemy-version: ["<2.0", "default"]
         os: [ubuntu-20.04]
     runs-on: ${{ matrix.os }}
@@ -88,13 +29,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-
-      - name: Set up cache
-        uses: actions/cache@v4
-        with:
-          path: /home/runner/.local
-          key: os-${{ matrix.os }}-python-${{ matrix.python-version }}-${{matrix.sqlalchemy-version }}-${{ hashFiles('**/poetry.lock') }}-poetry-1.6.1
-
+      - name: Install and set up Poetry
+        run: make install-poetry
+      - name: Install packages
+        run: make install
+      - name: Downgrade SQLAlchemy
+        run: poetry@2.1.2 run pip install -U "sqlalchemy${{ matrix.sqlalchemy-version }}"
+      - name: Downgrade Flask-SQLAlchemy
+        run: poetry@2.1.2 run pip install -U "flask-sqlalchemy<3.1"
+      - name: Lint
+        run: make lint
       - name: Setup PostgreSQL database
         run: |
           PGPASSWORD=postgres psql -c 'CREATE DATABASE eventsourcing_sqlalchemy;' -U postgres -h localhost
@@ -113,7 +57,7 @@ jobs:
           make create-mssql-schema
 
       - name: Print SQLAlchemy version
-        run: poetry run python -c "import sqlalchemy; print(f'Using sqlalchemy {sqlalchemy.__version__}')"
+        run: poetry@2.1.2 run python -c "import sqlalchemy; print(f'Using sqlalchemy {sqlalchemy.__version__}')"
 
       - name: Run tests
         run: make test

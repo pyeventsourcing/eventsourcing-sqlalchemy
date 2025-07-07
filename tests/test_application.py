@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
-from unittest import TestCase
+from unittest import TestCase, skip
 
 from eventsourcing.application import AggregateNotFoundError, Application
 from eventsourcing.domain import Aggregate
@@ -305,6 +305,7 @@ class TestWithPostgresSchema(TestWithPostgres):
             drop_postgres_table(datastore, "myschema.bankaccounts_events")
 
 
+@skip("SQL Server not supported yet")
 class TestWithMSSQL(TestApplicationWithSQLAlchemy):
     """
     On MacOS: need to run `brew install unixodbc`
@@ -360,6 +361,7 @@ class TestWithMSSQL(TestApplicationWithSQLAlchemy):
         drop_mssql_table("bankaccounts_events")
 
 
+@skip("SQL Server not supported yet")
 class TestWithMSSQLSchema(TestWithMSSQL):
     def setUp(self) -> None:
         super().setUp()

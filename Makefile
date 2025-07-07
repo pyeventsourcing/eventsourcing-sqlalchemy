@@ -3,8 +3,8 @@
 COMPOSE_FILE ?= docker/docker-compose-local.yml
 COMPOSE_PROJECT_NAME ?= eventsourcing_sqlalchemy
 
-POETRY_VERSION = 1.6.1
-POETRY ?= poetry
+POETRY_VERSION=2.1.2
+POETRY ?= poetry@$(POETRY_VERSION)
 
 DOTENV_BASE_FILE ?= .env-base
 DOTENV_LOCAL_FILE ?= .env
@@ -16,32 +16,27 @@ POETRY_INSTALLER_URL ?= https://install.python-poetry.org
 
 .PHONY: install-poetry
 install-poetry:
-	curl -sSL $(POETRY_INSTALLER_URL) | python3
+	@pipx install --suffix="@$(POETRY_VERSION)" "poetry==$(POETRY_VERSION)"
 	$(POETRY) --version
 
-.PHONY: install-packages
-install-packages:
-	$(POETRY) install -vv $(opts)
+.PHONY: poetry-version
+poetry-version:
+	$(POETRY) --version
 
-.PHONY: install-pre-commit-hooks
-install-pre-commit-hooks:
-ifeq ($(opts),)
-	$(POETRY) run pre-commit install
-endif
+.PHONY: python-version
+python-version:
+	$(POETRY) run python --version
 
-.PHONY: uninstall-pre-commit-hooks
-uninstall-pre-commit-hooks:
-ifeq ($(opts),)
-	$(POETRY) run pre-commit uninstall
-endif
+.PHONY: install
+install:
+	$(POETRY) sync --all-extras $(opts)
 
-.PHONY: lock-packages
-lock-packages:
-	$(POETRY) lock -vv --no-update
+.PHONY: update
+update: update-lock install
 
-.PHONY: update-packages
-update-packages:
-	$(POETRY) update -vv
+.PHONY: update-lock
+update-lock:
+	$(POETRY) update --lock -v
 
 .PHONY: docker-up
 docker-up:
