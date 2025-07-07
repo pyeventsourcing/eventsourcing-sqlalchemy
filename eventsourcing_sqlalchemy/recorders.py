@@ -99,6 +99,7 @@ class SQLAlchemyAggregateRecorder(AggregateRecorder):
         if self.schema_name is not None:
             events_table_name = f"{self.schema_name}.{events_table_name}"
         if self.datastore.engine.dialect.name == "postgresql":
+            # Todo: "SET LOCAL lock_timeout = '{x}s'" like in eventsourcing.postgres?
             session.execute(text(f"LOCK TABLE {events_table_name} IN EXCLUSIVE MODE"))
         elif self.datastore.engine.dialect.name == "mssql":
             pass
