@@ -12,7 +12,7 @@ from fastapi_sqlalchemy import DBSessionMiddleware
 from sqlalchemy.engine.url import URL
 from sqlalchemy.orm import scoped_session
 
-from eventsourcing_sqlalchemy.factory import Factory
+from eventsourcing_sqlalchemy.factory import SQLAlchemyFactory
 from tests.utils import drop_mssql_table
 
 try:
@@ -30,7 +30,7 @@ class ScopedSessionAdapter(scoped_session):
 
 class TestApplicationWithSQLAlchemy(ExampleApplicationTestCase):
     timeit_number = 30 * TIMEIT_FACTOR
-    expected_factory_topic = "eventsourcing_sqlalchemy.factory:Factory"
+    expected_factory_topic = "eventsourcing_sqlalchemy.factory:SQLAlchemyFactory"
     sqlalchemy_database_url = "sqlite:///:memory:"
 
     def setUp(self) -> None:
@@ -48,7 +48,7 @@ class TestApplicationWithSQLAlchemy(ExampleApplicationTestCase):
     def test_transactions_managed_outside_application(self) -> None:
         app = Application()
 
-        assert isinstance(app.factory, Factory)  # For IDE/mypy.
+        assert isinstance(app.factory, SQLAlchemyFactory)  # For IDE/mypy.
         assert isinstance(app.recorder, SQLAlchemyApplicationRecorder)  # For IDE/mypy.
 
         # Create an aggregate - autoflush=True.
@@ -301,8 +301,9 @@ class TestWithPostgresSchema(TestWithPostgres):
             port="5432",
             user="eventsourcing",
             password="eventsourcing",
+            schema="myschema",
         ) as datastore:
-            drop_postgres_table(datastore, "myschema.bankaccounts_events")
+            drop_postgres_table(datastore, "bankaccounts_events")
 
 
 @skip("SQL Server not supported yet")
@@ -387,7 +388,7 @@ class TestWithConnectionCreatorTopic(TestCase):
         def creator() -> None:
             raise MyCreatorException()
 
-        creator_topic = get_topic(creator)  # type: ignore[arg-type]
+        creator_topic = get_topic(creator)
 
         env = {
             "PERSISTENCE_MODULE": "eventsourcing_sqlalchemy",

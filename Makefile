@@ -103,7 +103,11 @@ fmt: fmt-black fmt-isort
 
 .PHONY: test
 test:
-	$(POETRY) run python -m pytest $(opts) $(call tests,.)
+	$(POETRY) run python -m unittest discover . -v
+
+.PHONY: pytest
+pytest:
+	$(POETRY) run pytest . -v  --durations 10
 
 .PHONY: build
 build:

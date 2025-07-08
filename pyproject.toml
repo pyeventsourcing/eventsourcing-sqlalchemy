@@ -29,7 +29,7 @@ python = "^3.9"
 #eventsourcing = { path = "../eventsourcing/", extras = ["crypto"], develop = true }
 #eventsourcing = { git = "https://github.com/pyeventsourcing/eventsourcing.git", branch = "main", extras = ["crypto"]}
 SQLAlchemy-Utils = ">=0.38.2"
-eventsourcing = "~9.3"
+eventsourcing = "~9.4"
 sqlalchemy = ">=1.4.26, <2.1"
 
 [tool.poetry.group.dev.dependencies]
@@ -45,7 +45,7 @@ isort = "*"
 mypy = "*"
 pre-commit = "*"
 pre-commit-hooks = "*"
-eventsourcing = { version = "~9.3", extras = ["crypto"] }
+eventsourcing = { version = "~9.4", extras = ["crypto"] }
 psycopg = { version = "*", extras = ["binary", "pool"] }
 psycopg2-binary = "*"
 pytest = "*"

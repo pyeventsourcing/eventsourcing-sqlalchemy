@@ -10,6 +10,7 @@ from eventsourcing.persistence import (
     Notification,
     ProcessRecorder,
     StoredEvent,
+    Subscription,
     Tracking,
 )
 from sqlalchemy import Column, Table, text
@@ -173,7 +174,7 @@ class SQLAlchemyApplicationRecorder(SQLAlchemyAggregateRecorder, ApplicationReco
                 notification_ids = self._insert_events(session, stored_events, **kwargs)
         return notification_ids
 
-    def max_notification_id(self) -> int:
+    def max_notification_id(self) -> int | None:
         try:
             with self.transaction(commit=False) as session:
                 # record_class = cast(Type[StoredEventRecord], self.events_record_cls)
@@ -183,20 +184,26 @@ class SQLAlchemyApplicationRecorder(SQLAlchemyAggregateRecorder, ApplicationReco
                 records = q[0:1]
                 return records[0].id
         except (IndexError, AssertionError):
-            return 0
+            return None
 
     def select_notifications(
         self,
-        start: int,
+        start: int | None,
         limit: int,
-        stop: Optional[int] = None,
+        stop: int | None = None,
         topics: Sequence[str] = (),
-    ) -> List[Notification]:
+        *,
+        inclusive_of_start: bool = True,
+    ) -> list[Notification]:
         with self.transaction(commit=False) as session:
             # record_class = cast(Type[StoredEventRecord], self.events_record_cls)
             record_class = self.events_record_cls
             q = session.query(record_class)
-            q = q.filter(record_class.id >= start)
+            if start is not None:
+                if inclusive_of_start:
+                    q = q.filter(record_class.id >= start)
+                else:
+                    q = q.filter(record_class.id > start)
             if stop is not None:
                 q = q.filter(record_class.id <= stop)
             if topics:
@@ -217,6 +224,12 @@ class SQLAlchemyApplicationRecorder(SQLAlchemyAggregateRecorder, ApplicationReco
                 for r in q
             ]
         return notifications
+
+    def subscribe(
+        self, gt: int | None = None, topics: Sequence[str] = ()
+    ) -> Subscription[ApplicationRecorder]:
+        msg = "SQLAlchemyApplicationRecorder.subscribe() is not implemented"
+        raise NotImplementedError(msg)
 
 
 class SQLAlchemyProcessRecorder(SQLAlchemyApplicationRecorder, ProcessRecorder):
@@ -260,7 +273,7 @@ class SQLAlchemyProcessRecorder(SQLAlchemyApplicationRecorder, ProcessRecorder):
             session.add(record)
         return notification_ids
 
-    def max_tracking_id(self, application_name: str) -> int:
+    def max_tracking_id(self, application_name: str) -> int | None:
         with self.transaction(commit=False) as session:
             q = session.query(self.tracking_record_cls)
             q = q.filter(self.tracking_record_cls.application_name == application_name)
@@ -268,12 +281,19 @@ class SQLAlchemyProcessRecorder(SQLAlchemyApplicationRecorder, ProcessRecorder):
             try:
                 max_id = q[0].notification_id
             except IndexError:
-                max_id = 0
+                max_id = None
         return max_id
 
-    def has_tracking_id(self, application_name: str, notification_id: int) -> bool:
+    def has_tracking_id(
+        self, application_name: str, notification_id: int | None
+    ) -> bool:
+        if notification_id is None:
+            return True
         with self.transaction(commit=False) as session:
             q = session.query(self.tracking_record_cls)
             q = q.filter(self.tracking_record_cls.application_name == application_name)
             q = q.filter(self.tracking_record_cls.notification_id == notification_id)
             return bool(q.count())
+
+    def insert_tracking(self, tracking: Tracking) -> None:
+        raise NotImplementedError

@@ -130,11 +130,11 @@ class TestSQLAlchemyProcessRecorder(ProcessRecorderTestCase):
         recorder = self.create_recorder()
         self.assertEqual(
             recorder.max_tracking_id("upstream_app1"),
-            0,
+            None,
         )
         self.assertEqual(
             recorder.max_tracking_id("upstream_app2"),
-            0,
+            None,
         )
 
         originator_id1 = uuid4()
@@ -163,7 +163,7 @@ class TestSQLAlchemyProcessRecorder(ProcessRecorderTestCase):
         )
         self.assertEqual(
             recorder.max_tracking_id("upstream_app2"),
-            0,
+            None,
         )
 
 

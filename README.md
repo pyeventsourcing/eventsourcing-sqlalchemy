@@ -189,7 +189,7 @@ Define an adapter for a `scoped_session` object and configure the event-sourced
 application using the environment variable `SQLALCHEMY_SCOPED_SESSION_TOPIC`.
 
 ```python
-from eventsourcing.application import AggregateNotFound
+from eventsourcing.application import AggregateNotFoundError
 from eventsourcing.utils import get_topic
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
@@ -242,7 +242,7 @@ session.remove()
 try:
     # forgot to commit
     app.repository.get(aggregate.id)
-except AggregateNotFound:
+except AggregateNotFoundError:
     pass
 else:
     raise Exception("Expected aggregate not found")
@@ -379,7 +379,7 @@ else:
 with db(commit_on_exit=True):
     try:
         es_app.repository.get(aggregate.id)
-    except AggregateNotFound:
+    except AggregateNotFoundError:
         pass
     else:
         raise Exception("Expected aggregate not found")

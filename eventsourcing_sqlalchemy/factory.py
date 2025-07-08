@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import annotations
+
 from typing import Optional
 
 from eventsourcing.persistence import (
@@ -6,6 +8,7 @@ from eventsourcing.persistence import (
     ApplicationRecorder,
     InfrastructureFactory,
     ProcessRecorder,
+    TrackingRecorder,
 )
 from eventsourcing.utils import Environment, resolve_topic, strtobool
 from sqlalchemy.orm import scoped_session
@@ -18,7 +21,7 @@ from eventsourcing_sqlalchemy.recorders import (
 )
 
 
-class Factory(InfrastructureFactory):
+class SQLAlchemyFactory(InfrastructureFactory[TrackingRecorder]):
     SQLALCHEMY_URL = "SQLALCHEMY_URL"
     SQLALCHEMY_AUTOFLUSH = "SQLALCHEMY_AUTOFLUSH"
     SQLALCHEMY_CONNECTION_CREATOR_TOPIC = "SQLALCHEMY_CONNECTION_CREATOR_TOPIC"
@@ -102,6 +105,14 @@ class Factory(InfrastructureFactory):
             recorder.create_table()
         return recorder
 
+    def tracking_recorder(
+        self, tracking_recorder_class: type[TrackingRecorder] | None = None
+    ) -> TrackingRecorder:
+        raise NotImplementedError
+
     def env_create_table(self) -> bool:
         default = "yes"
         return bool(strtobool(self.env.get(self.CREATE_TABLE) or default))
+
+
+Factory = SQLAlchemyFactory

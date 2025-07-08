@@ -1,1 +1,1 @@
-from .factory import Factory  # noqa
+from .factory import SQLAlchemyFactory  # noqa
