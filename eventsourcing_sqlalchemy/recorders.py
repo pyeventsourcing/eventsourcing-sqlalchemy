@@ -7,6 +7,7 @@ from uuid import UUID
 from eventsourcing.persistence import (
     AggregateRecorder,
     ApplicationRecorder,
+    IntegrityError,
     Notification,
     ProcessRecorder,
     StoredEvent,
@@ -64,14 +65,14 @@ class SQLAlchemyAggregateRecorder(AggregateRecorder):
         self.stored_events_table.create(self.datastore.engine, checkfirst=True)
 
     def insert_events(
-        self, stored_events: List[StoredEvent], **kwargs: Any
+        self, stored_events: Sequence[StoredEvent], **kwargs: Any
     ) -> Optional[Sequence[int]]:
         with self.transaction(commit=True) as session:
             self._insert_events(session, stored_events, **kwargs)
         return None
 
     def _insert_events(
-        self, session: Session, stored_events: List[StoredEvent], **kwargs: Any
+        self, session: Session, stored_events: Sequence[StoredEvent], **kwargs: Any
     ) -> Optional[Sequence[int]]:
         if len(stored_events) == 0:
             return []
@@ -121,7 +122,7 @@ class SQLAlchemyAggregateRecorder(AggregateRecorder):
 
     def select_events(
         self,
-        originator_id: UUID,
+        originator_id: UUID | str,
         gt: Optional[int] = None,
         lte: Optional[int] = None,
         desc: bool = False,
@@ -161,7 +162,7 @@ class SQLAlchemyAggregateRecorder(AggregateRecorder):
 class SQLAlchemyApplicationRecorder(SQLAlchemyAggregateRecorder, ApplicationRecorder):
     def insert_events(
         self,
-        stored_events: List[StoredEvent],
+        stored_events: Sequence[StoredEvent],
         *,
         session: Optional[Session] = None,
         **kwargs: Any,
@@ -259,13 +260,17 @@ class SQLAlchemyProcessRecorder(SQLAlchemyApplicationRecorder, ProcessRecorder):
         self.tracking_table.create(self.datastore.engine, checkfirst=True)
 
     def _insert_events(
-        self, session: Session, stored_events: List[StoredEvent], **kwargs: Any
+        self, session: Session, stored_events: Sequence[StoredEvent], **kwargs: Any
     ) -> Optional[Sequence[int]]:
         notification_ids = super(SQLAlchemyProcessRecorder, self)._insert_events(
             session, stored_events, **kwargs
         )
         tracking: Optional[Tracking] = kwargs.get("tracking", None)
         if tracking is not None:
+            if self.has_tracking_id(
+                tracking.application_name, tracking.notification_id
+            ):
+                raise IntegrityError
             record = self.tracking_record_cls(
                 application_name=tracking.application_name,
                 notification_id=tracking.notification_id,
@@ -283,17 +288,6 @@ class SQLAlchemyProcessRecorder(SQLAlchemyApplicationRecorder, ProcessRecorder):
             except IndexError:
                 max_id = None
         return max_id
-
-    def has_tracking_id(
-        self, application_name: str, notification_id: int | None
-    ) -> bool:
-        if notification_id is None:
-            return True
-        with self.transaction(commit=False) as session:
-            q = session.query(self.tracking_record_cls)
-            q = q.filter(self.tracking_record_cls.application_name == application_name)
-            q = q.filter(self.tracking_record_cls.notification_id == notification_id)
-            return bool(q.count())
 
     def insert_tracking(self, tracking: Tracking) -> None:
         raise NotImplementedError

@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 import os
 from unittest import TestCase, skip
+from uuid import UUID
 
 from eventsourcing.application import AggregateNotFoundError, Application
 from eventsourcing.domain import Aggregate
-from eventsourcing.postgres import PostgresDatastore
-from eventsourcing.tests.application import TIMEIT_FACTOR, ExampleApplicationTestCase
-from eventsourcing.tests.postgres_utils import drop_postgres_table
+from eventsourcing.tests.application import ExampleApplicationTestCase
+from eventsourcing.tests.postgres_utils import drop_tables
 from eventsourcing.utils import clear_topic_cache, get_topic
 from fastapi_sqlalchemy import DBSessionMiddleware
 from sqlalchemy.engine.url import URL
@@ -29,7 +29,6 @@ class ScopedSessionAdapter(scoped_session):
 
 
 class TestApplicationWithSQLAlchemy(ExampleApplicationTestCase):
-    timeit_number = 30 * TIMEIT_FACTOR
     expected_factory_topic = "eventsourcing_sqlalchemy.factory:SQLAlchemyFactory"
     sqlalchemy_database_url = "sqlite:///:memory:"
 
@@ -46,7 +45,7 @@ class TestApplicationWithSQLAlchemy(ExampleApplicationTestCase):
         super().tearDown()
 
     def test_transactions_managed_outside_application(self) -> None:
-        app = Application()
+        app = Application[UUID]()
 
         assert isinstance(app.factory, SQLAlchemyFactory)  # For IDE/mypy.
         assert isinstance(app.recorder, SQLAlchemyApplicationRecorder)  # For IDE/mypy.
@@ -122,7 +121,9 @@ class TestApplicationWithSQLAlchemy(ExampleApplicationTestCase):
 
         scoped_session_topic = get_topic(MyScopedSession)
 
-        app = Application(env={"SQLALCHEMY_SCOPED_SESSION_TOPIC": scoped_session_topic})
+        app = Application[UUID](
+            env={"SQLALCHEMY_SCOPED_SESSION_TOPIC": scoped_session_topic}
+        )
 
         # Handle request.
         aggregate = Aggregate()
@@ -175,7 +176,7 @@ class TestApplicationWithSQLAlchemy(ExampleApplicationTestCase):
 
         # Set up database.
         with flask_app.app_context():
-            es_app = Application(
+            es_app = Application[UUID](
                 env={"SQLALCHEMY_SCOPED_SESSION_TOPIC": get_topic(FlaskScopedSession)}
             )
 
@@ -218,7 +219,7 @@ class TestApplicationWithSQLAlchemy(ExampleApplicationTestCase):
 
         # Set up database.
         with db(commit_on_exit=True):
-            es_app = Application(
+            es_app = Application[UUID](
                 env={"SQLALCHEMY_SCOPED_SESSION_TOPIC": get_topic(FastapiScopedSession)}
             )
 
@@ -259,7 +260,6 @@ class TestApplicationWithSQLAlchemy(ExampleApplicationTestCase):
 
 
 class TestWithPostgres(TestApplicationWithSQLAlchemy):
-    timeit_number = 5 * TIMEIT_FACTOR
     sqlalchemy_database_url = (
         "postgresql://eventsourcing:eventsourcing@localhost:5432"
         "/eventsourcing_sqlalchemy"
@@ -267,21 +267,23 @@ class TestWithPostgres(TestApplicationWithSQLAlchemy):
 
     def setUp(self) -> None:
         super().setUp()
+        self.orig_postgres_dbname = os.environ.get("POSTGRES_DBNAME")
+        os.environ["POSTGRES_DBNAME"] = "eventsourcing_sqlalchemy"
         self.drop_tables()
 
     def tearDown(self) -> None:
         self.drop_tables()
+        if self.orig_postgres_dbname is not None:
+            os.environ["POSTGRES_DBNAME"] = self.orig_postgres_dbname
+        else:
+            del os.environ["POSTGRES_DBNAME"]
         super().tearDown()
 
     def drop_tables(self) -> None:
-        with PostgresDatastore(
-            dbname="eventsourcing_sqlalchemy",
-            host="127.0.0.1",
-            port="5432",
-            user="eventsourcing",
-            password="eventsourcing",
-        ) as datastore:
-            drop_postgres_table(datastore, "bankaccounts_events")
+        drop_tables()
+
+    def test_example_application(self) -> None:
+        super().test_example_application()
 
 
 class TestWithPostgresSchema(TestWithPostgres):
@@ -295,15 +297,7 @@ class TestWithPostgresSchema(TestWithPostgres):
             del os.environ["SQLALCHEMY_SCHEMA"]
 
     def drop_tables(self) -> None:
-        with PostgresDatastore(
-            dbname="eventsourcing_sqlalchemy",
-            host="127.0.0.1",
-            port="5432",
-            user="eventsourcing",
-            password="eventsourcing",
-            schema="myschema",
-        ) as datastore:
-            drop_postgres_table(datastore, "bankaccounts_events")
+        drop_tables()
 
 
 @skip("SQL Server not supported yet")
@@ -332,7 +326,6 @@ class TestWithMSSQL(TestApplicationWithSQLAlchemy):
 
     """
 
-    timeit_number = 5 * TIMEIT_FACTOR
     sqlalchemy_database_url = URL.create(  # type: ignore[attr-defined]
         "mssql+pyodbc",
         username="sa",

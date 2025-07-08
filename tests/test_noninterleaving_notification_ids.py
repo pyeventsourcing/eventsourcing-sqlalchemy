@@ -2,12 +2,11 @@
 from unittest import skip
 
 from eventsourcing.persistence import ApplicationRecorder
-from eventsourcing.postgres import PostgresDatastore
 from eventsourcing.tests.persistence import (
     NonInterleavingNotificationIDsBaseCase,
     tmpfile_uris,
 )
-from eventsourcing.tests.postgres_utils import drop_postgres_table
+from eventsourcing.tests.postgres_utils import drop_tables
 from sqlalchemy.engine.url import URL
 
 from eventsourcing_sqlalchemy.datastore import SQLAlchemyDatastore
@@ -62,14 +61,7 @@ class TestNonInterleavingPostgres(TestNonInterleaving):
         super().tearDown()
 
     def drop_tables(self) -> None:
-        with PostgresDatastore(
-            dbname="eventsourcing_sqlalchemy",
-            host="127.0.0.1",
-            port="5432",
-            user="eventsourcing",
-            password="eventsourcing",
-        ) as datastore:
-            drop_postgres_table(datastore, "stored_events")
+        drop_tables()
 
 
 @skip("SQL Server not supported yet")
