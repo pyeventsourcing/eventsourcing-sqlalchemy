@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 from unittest import skip
 
 from eventsourcing.persistence import ApplicationRecorder
@@ -54,10 +55,16 @@ class TestNonInterleavingPostgres(TestNonInterleaving):
 
     def setUp(self) -> None:
         super().setUp()
+        self.orig_postgres_dbname = os.environ.get("POSTGRES_DBNAME")
+        os.environ["POSTGRES_DBNAME"] = "eventsourcing_sqlalchemy"
         self.drop_tables()
 
     def tearDown(self) -> None:
         self.drop_tables()
+        if self.orig_postgres_dbname is not None:
+            os.environ["POSTGRES_DBNAME"] = self.orig_postgres_dbname
+        else:
+            del os.environ["POSTGRES_DBNAME"]
         super().tearDown()
 
     def drop_tables(self) -> None:
