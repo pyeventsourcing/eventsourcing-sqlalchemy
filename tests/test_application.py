@@ -6,14 +6,13 @@ from uuid import UUID
 from eventsourcing.application import AggregateNotFoundError, Application
 from eventsourcing.domain import Aggregate
 from eventsourcing.tests.application import ExampleApplicationTestCase
-from eventsourcing.tests.postgres_utils import drop_tables
 from eventsourcing.utils import clear_topic_cache, get_topic
 from fastapi_sqlalchemy import DBSessionMiddleware
 from sqlalchemy.engine.url import URL
 from sqlalchemy.orm import scoped_session
 
 from eventsourcing_sqlalchemy.factory import SQLAlchemyFactory
-from tests.utils import drop_mssql_table
+from tests.utils import drop_mssql_table, drop_pg_tables
 
 try:
     from sqlalchemy.orm import declarative_base  # type: ignore
@@ -280,7 +279,7 @@ class TestWithPostgres(TestApplicationWithSQLAlchemy):
         super().tearDown()
 
     def drop_tables(self) -> None:
-        drop_tables()
+        drop_pg_tables()
 
     def test_example_application(self) -> None:
         super().test_example_application()
@@ -297,7 +296,7 @@ class TestWithPostgresSchema(TestWithPostgres):
             del os.environ["SQLALCHEMY_SCHEMA"]
 
     def drop_tables(self) -> None:
-        drop_tables()
+        drop_pg_tables()
 
 
 @skip("SQL Server not supported yet")
