@@ -87,12 +87,12 @@ class TestSQLAlchemyApplicationRecorder(ApplicationRecorderTestCase):
         self.assertFalse(self.datastore.is_sqlite_wal_mode)
         super().test_insert_select()
 
-    def test_concurrent_no_conflicts(self) -> None:
+    def test_concurrent_no_conflicts(self, initial_position: int = 0) -> None:
         self.assertFalse(self.datastore.is_sqlite_wal_mode)
         self.assertTrue(self.datastore.access_lock)
         self.assertFalse(self.datastore.write_lock)
         self.assertIsInstance(self.datastore.access_lock, Semaphore)
-        super().test_concurrent_no_conflicts()
+        super().test_concurrent_no_conflicts(initial_position=initial_position)
 
     def test_concurrent_no_conflicts_sqlite_filedb(self) -> None:
         uris = tmpfile_uris()
