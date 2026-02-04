@@ -13,9 +13,11 @@ from eventsourcing.persistence import (
     StoredEvent,
     Subscription,
     Tracking,
+    TrackingRecorder,
 )
 from sqlalchemy import Column, Table, text
 from sqlalchemy.orm import Session
+from typing_extensions import TypeVar
 
 from eventsourcing_sqlalchemy.datastore import SQLAlchemyDatastore, Transaction
 from eventsourcing_sqlalchemy.models import (  # type: ignore
@@ -291,50 +293,29 @@ class SQLAlchemyApplicationRecorder(SQLAlchemyAggregateRecorder, ApplicationReco
         raise NotImplementedError(msg)
 
 
-class SQLAlchemyProcessRecorder(SQLAlchemyApplicationRecorder, ProcessRecorder):
+class SQLAlchemyTrackingRecorder(SQLAlchemyRecorder, TrackingRecorder):
     def __init__(
         self,
         datastore: SQLAlchemyDatastore,
-        events_table_name: str,
-        tracking_table_name: str,
+        *,
+        tracking_table_name: str = "notification_tracking",
         schema_name: str | None = None,
+        **kwargs: Any,
     ):
-        super().__init__(
-            datastore=datastore,
-            events_table_name=events_table_name,
-            schema_name=schema_name,
-        )
+        super().__init__(datastore=datastore, **kwargs)
         self.tracking_table_name = tracking_table_name
         self.tracking_record_cls = self.datastore.define_record_class(
             cls_name="NotificationTrackingRecord",
             table_name=self.tracking_table_name,
-            schema_name=self.schema_name,
+            schema_name=schema_name,
             base_cls=datastore.base_notification_tracking_record_cls,
         )
         self.tracking_table: Table = self.tracking_record_cls.__table__
 
     def create_table(self) -> None:
         super().create_table()
+        assert self.datastore.engine is not None
         self.tracking_table.create(self.datastore.engine, checkfirst=True)
-
-    def _insert_events(
-        self, session: Session, stored_events: Sequence[StoredEvent], **kwargs: Any
-    ) -> Optional[Sequence[int]]:
-        notification_ids = super(SQLAlchemyProcessRecorder, self)._insert_events(
-            session, stored_events, **kwargs
-        )
-        tracking: Optional[Tracking] = kwargs.get("tracking", None)
-        if tracking is not None:
-            if self.has_tracking_id(
-                tracking.application_name, tracking.notification_id
-            ):
-                raise IntegrityError
-            record = self.tracking_record_cls(
-                application_name=tracking.application_name,
-                notification_id=tracking.notification_id,
-            )
-            session.add(record)
-        return notification_ids
 
     def max_tracking_id(self, application_name: str) -> int | None:
         with self.transaction(commit=False) as session:
@@ -348,4 +329,51 @@ class SQLAlchemyProcessRecorder(SQLAlchemyApplicationRecorder, ProcessRecorder):
         return max_id
 
     def insert_tracking(self, tracking: Tracking) -> None:
-        raise NotImplementedError
+        with self.transaction(commit=True) as session:
+            self._insert_tracking(session=session, tracking=tracking)
+
+    def _insert_tracking(self, session: Session, tracking: Tracking) -> None:
+        if tracking is not None:
+            if self.has_tracking_id(
+                tracking.application_name, tracking.notification_id
+            ):
+                raise IntegrityError
+            record = self.tracking_record_cls(
+                application_name=tracking.application_name,
+                notification_id=tracking.notification_id,
+            )
+            session.add(record)
+
+
+TSQLAlchemyTrackingRecorder = TypeVar(
+    "TSQLAlchemyTrackingRecorder",
+    bound=SQLAlchemyTrackingRecorder,
+    default=SQLAlchemyTrackingRecorder,
+)
+
+
+class SQLAlchemyProcessRecorder(
+    SQLAlchemyTrackingRecorder, SQLAlchemyApplicationRecorder, ProcessRecorder
+):
+    def __init__(
+        self,
+        datastore: SQLAlchemyDatastore,
+        *,
+        events_table_name: str,
+        tracking_table_name: str,
+        schema_name: str | None = None,
+    ):
+        super().__init__(
+            datastore=datastore,
+            tracking_table_name=tracking_table_name,
+            events_table_name=events_table_name,
+            schema_name=schema_name,
+        )
+
+    def _insert_events(
+        self, session: Session, stored_events: Sequence[StoredEvent], **kwargs: Any
+    ) -> None:
+        tracking: Optional[Tracking] = kwargs.get("tracking", None)
+        if tracking is not None:
+            self._insert_tracking(session, tracking)
+        super()._insert_events(session=session, stored_events=stored_events, **kwargs)

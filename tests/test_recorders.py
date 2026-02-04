@@ -8,11 +8,13 @@ from eventsourcing.persistence import (
     ProcessRecorder,
     StoredEvent,
     Tracking,
+    TrackingRecorder,
 )
 from eventsourcing.tests.persistence import (
     AggregateRecorderTestCase,
     ApplicationRecorderTestCase,
     ProcessRecorderTestCase,
+    TrackingRecorderTestCase,
     tmpfile_uris,
 )
 from sqlalchemy.future import create_engine
@@ -23,6 +25,7 @@ from eventsourcing_sqlalchemy.recorders import (
     SQLAlchemyAggregateRecorder,
     SQLAlchemyApplicationRecorder,
     SQLAlchemyProcessRecorder,
+    SQLAlchemyTrackingRecorder,
 )
 
 
@@ -107,6 +110,19 @@ class TestSQLAlchemyApplicationRecorder(ApplicationRecorderTestCase):
         self.assertTrue(self.datastore.is_sqlite_wal_mode)
 
 
+class TestSQLAlchemyTrackingRecorder(TrackingRecorderTestCase):
+    def setUp(self) -> None:
+        self.datastore = SQLAlchemyDatastore(url="sqlite:///:memory:")
+
+    def create_recorder(self) -> TrackingRecorder:
+        recorder = SQLAlchemyTrackingRecorder(
+            datastore=self.datastore,
+            tracking_table_name="tracking",
+        )
+        recorder.create_table()
+        return recorder
+
+
 class TestSQLAlchemyProcessRecorder(ProcessRecorderTestCase):
     def setUp(self) -> None:
         self.datastore = SQLAlchemyDatastore(url="sqlite:///:memory:")
@@ -170,3 +186,4 @@ class TestSQLAlchemyProcessRecorder(ProcessRecorderTestCase):
 del AggregateRecorderTestCase
 del ApplicationRecorderTestCase
 del ProcessRecorderTestCase
+del TrackingRecorderTestCase
