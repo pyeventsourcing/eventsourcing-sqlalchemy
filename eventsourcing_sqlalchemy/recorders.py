@@ -24,18 +24,41 @@ from eventsourcing_sqlalchemy.models import (  # type: ignore
 )
 
 
-class SQLAlchemyAggregateRecorder(AggregateRecorder):
+class SQLAlchemyRecorder:
+    """Base class for recorders that use SQLAlchemy."""
+
     def __init__(
         self,
         datastore: SQLAlchemyDatastore,
+        schema_name: str | None = None,
+    ):
+        self.datastore = datastore
+        self.schema_name = schema_name
+        self.tables: List[Table] = []
+
+    def create_table(self) -> None:
+        assert self.datastore.engine is not None
+        for table in self.tables:
+            table.create(self.datastore.engine, checkfirst=True)
+
+    def transaction(self, commit: bool = True) -> Transaction:
+        return self.datastore.transaction(commit=commit)
+
+
+class SQLAlchemyAggregateRecorder(SQLAlchemyRecorder, AggregateRecorder):
+    def __init__(
+        self,
+        datastore: SQLAlchemyDatastore,
+        *,
         events_table_name: str,
         schema_name: str | None = None,
         for_snapshots: bool = False,
     ):
-        super().__init__()
-        self.datastore = datastore
+        super().__init__(
+            datastore,
+            schema_name=schema_name,
+        )
         self.events_table_name = events_table_name
-        self.schema_name = schema_name
         record_cls_name = "".join(
             [
                 s.capitalize()
@@ -55,27 +78,18 @@ class SQLAlchemyAggregateRecorder(AggregateRecorder):
             schema_name=self.schema_name,
             base_cls=base_cls,
         )
-        self.stored_events_table = self.events_record_cls.__table__
-
-    def transaction(self, commit: bool = True) -> Transaction:
-        return self.datastore.transaction(commit=commit)
-
-    def create_table(self) -> None:
-        assert self.datastore.engine is not None
-        self.stored_events_table.create(self.datastore.engine, checkfirst=True)
+        self.tables.append(self.events_record_cls.__table__)
 
     def insert_events(
         self, stored_events: Sequence[StoredEvent], **kwargs: Any
     ) -> Optional[Sequence[int]]:
         with self.transaction(commit=True) as session:
-            self._insert_events(session, stored_events, **kwargs)
+            self._insert_stored_events(session, stored_events, **kwargs)
         return None
 
-    def _insert_events(
+    def _insert_stored_events(
         self, session: Session, stored_events: Sequence[StoredEvent], **kwargs: Any
     ) -> Optional[Sequence[int]]:
-        if len(stored_events) == 0:
-            return []
         records = [
             self.events_record_cls(
                 originator_id=e.originator_id,
@@ -91,9 +105,7 @@ class SQLAlchemyAggregateRecorder(AggregateRecorder):
             session.add(record)
         if self._has_autoincrementing_ids:
             session.flush()  # We want the autoincremented IDs now.
-            return [cast(StoredEventRecord, r).id for r in records]
-        else:
-            return None
+        return None
 
     def _lock_table(self, session: Session) -> None:
         assert self.datastore.engine is not None
@@ -160,6 +172,18 @@ class SQLAlchemyAggregateRecorder(AggregateRecorder):
 
 
 class SQLAlchemyApplicationRecorder(SQLAlchemyAggregateRecorder, ApplicationRecorder):
+    def __init__(
+        self,
+        datastore: SQLAlchemyDatastore,
+        *,
+        events_table_name: str,
+        schema_name: str | None = None,
+    ):
+        super().__init__(
+            datastore, events_table_name=events_table_name, schema_name=schema_name
+        )
+        self.channel_name = self.events_table_name.replace(".", "_")
+
     def insert_events(
         self,
         stored_events: Sequence[StoredEvent],
@@ -169,11 +193,45 @@ class SQLAlchemyApplicationRecorder(SQLAlchemyAggregateRecorder, ApplicationReco
     ) -> Optional[Sequence[int]]:
         if session is not None:
             assert isinstance(session, Session), type(session)
-            notification_ids = self._insert_events(session, stored_events, **kwargs)
+            self._insert_events(session, stored_events, **kwargs)
+            notification_ids = self._insert_stored_events(
+                session, stored_events, **kwargs
+            )
         else:
             with self.transaction(commit=True) as session:
-                notification_ids = self._insert_events(session, stored_events, **kwargs)
+                self._insert_events(session, stored_events, **kwargs)
+                notification_ids = self._insert_stored_events(
+                    session, stored_events, **kwargs
+                )
         return notification_ids
+
+    def _insert_events(
+        self,
+        session: Session,
+        stored_events: Sequence[StoredEvent],
+        **_: Any,
+    ) -> Optional[Sequence[int]]:
+        pass
+
+    def _insert_stored_events(
+        self, session: Session, stored_events: Sequence[StoredEvent], **kwargs: Any
+    ) -> Sequence[int]:
+        records = [
+            self.events_record_cls(
+                originator_id=e.originator_id,
+                originator_version=e.originator_version,
+                topic=e.topic,
+                state=e.state,
+            )
+            for e in stored_events
+        ]
+        if self._has_autoincrementing_ids:
+            self._lock_table(session)
+        for record in records:
+            session.add(record)
+        if self._has_autoincrementing_ids:
+            session.flush()  # We want the autoincremented IDs now.
+        return [cast(StoredEventRecord, r).id for r in records]
 
     def max_notification_id(self) -> int | None:
         try:
