@@ -34,10 +34,10 @@ jobs:
         run: make install
       - name: Downgrade SQLAlchemy
         if: ${{ matrix.sqlalchemy-version != 'default' }}
-        run: poetry@2.1.2 run pip install -U "sqlalchemy${{ matrix.sqlalchemy-version }}"
+        run: poetry@2.2.1 run pip install -U "sqlalchemy${{ matrix.sqlalchemy-version }}"
       - name: Downgrade Flask-SQLAlchemy
         if: ${{ matrix.sqlalchemy-version != 'default' }}
-        run: poetry@2.1.2 run pip install -U "flask-sqlalchemy<3.1"
+        run: poetry@2.2.1 run pip install -U "flask-sqlalchemy<3.1"
       - name: Lint
         run: make lint
       - name: Setup PostgreSQL database
@@ -58,7 +58,7 @@ jobs:
           make create-mssql-schema
 
       - name: Print SQLAlchemy version
-        run: poetry@2.1.2 run python -c "import sqlalchemy; print(f'Using sqlalchemy {sqlalchemy.__version__}')"
+        run: poetry@2.2.1 run python -c "import sqlalchemy; print(f'Using sqlalchemy {sqlalchemy.__version__}')"
 
       - name: Run tests
         run: make test

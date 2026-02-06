@@ -230,7 +230,7 @@ class SQLAlchemyDatastore:
     ) -> Type[TEventRecord]:
         try:
             record_classes_key = (schema_name or "public") + "." + table_name
-            (record_class, record_base_cls) = cls.record_classes[record_classes_key]
+            record_class, record_base_cls = cls.record_classes[record_classes_key]
             if record_base_cls is not base_cls:
                 raise ValueError(
                     f"Have already defined a record class with table name {table_name} "

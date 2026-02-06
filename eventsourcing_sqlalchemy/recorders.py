@@ -64,8 +64,9 @@ class SQLAlchemyAggregateRecorder(SQLAlchemyRecorder, AggregateRecorder):
         record_cls_name = "".join(
             [
                 s.capitalize()
-                for s in (schema_name or "").split("_")
-                + events_table_name.rstrip("s").split("_")
+                for s in (schema_name or "").split("_") + events_table_name.rstrip(
+                    "s"
+                ).split("_")
             ]
         )
         if not for_snapshots:
