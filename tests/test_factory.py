@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
 from typing import Type
-from unittest import skip
 
 from eventsourcing.persistence import (
     AggregateRecorder,
@@ -18,6 +17,7 @@ from eventsourcing_sqlalchemy.recorders import (
     SQLAlchemyAggregateRecorder,
     SQLAlchemyApplicationRecorder,
     SQLAlchemyProcessRecorder,
+    SQLAlchemyTrackingRecorder,
 )
 
 
@@ -38,10 +38,13 @@ class TestSQLAlchemyFactory(InfrastructureFactoryTestCase[SQLAlchemyFactory]):
         return SQLAlchemyProcessRecorder
 
     def expected_tracking_recorder_class(self) -> type[TrackingRecorder]:
-        raise NotImplementedError
+        return SQLAlchemyTrackingRecorder
+
+    class SQLAchemyTrackingRecorderSubclass(SQLAlchemyTrackingRecorder):
+        pass
 
     def tracking_recorder_subclass(self) -> type[TrackingRecorder]:
-        raise NotImplementedError
+        return self.SQLAchemyTrackingRecorderSubclass
 
     def setUp(self) -> None:
         self.env = Environment("TestCase")
@@ -55,9 +58,6 @@ class TestSQLAlchemyFactory(InfrastructureFactoryTestCase[SQLAlchemyFactory]):
         if SQLAlchemyFactory.SQLALCHEMY_URL in os.environ:
             del os.environ[SQLAlchemyFactory.SQLALCHEMY_URL]
         super().tearDown()
-
-    def test_create_tracking_recorder(self) -> None:
-        skip("SQLAlchemyFactory doesn't implement tracking recorders yet")
 
 
 del InfrastructureFactoryTestCase

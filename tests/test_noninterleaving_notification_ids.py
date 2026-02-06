@@ -7,12 +7,11 @@ from eventsourcing.tests.persistence import (
     NonInterleavingNotificationIDsBaseCase,
     tmpfile_uris,
 )
-from eventsourcing.tests.postgres_utils import drop_tables
 from sqlalchemy.engine.url import URL
 
 from eventsourcing_sqlalchemy.datastore import SQLAlchemyDatastore
 from eventsourcing_sqlalchemy.recorders import SQLAlchemyApplicationRecorder
-from tests.utils import drop_mssql_table
+from tests.utils import drop_mssql_table, drop_pg_tables
 
 
 class TestNonInterleaving(NonInterleavingNotificationIDsBaseCase):
@@ -68,7 +67,7 @@ class TestNonInterleavingPostgres(TestNonInterleaving):
         super().tearDown()
 
     def drop_tables(self) -> None:
-        drop_tables()
+        drop_pg_tables()
 
 
 @skip("SQL Server not supported yet")

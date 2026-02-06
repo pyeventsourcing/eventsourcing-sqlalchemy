@@ -14,7 +14,6 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python",
 ]
 readme = "README.md"
@@ -23,12 +22,12 @@ repository = "https://github.com/pyeventsourcing/eventsourcing-sqlalchemy"
 include = ["eventsourcing_sqlalchemy/py.typed"]
 
 [tool.poetry.dependencies]
-python = "^3.9.2"
+python = "^3.10.0"
 #eventsourcing = { path = "../eventsourcing/", extras = ["crypto"] }
 #eventsourcing = { path = "../eventsourcing/", extras = ["crypto"], develop = true }
 #eventsourcing = { git = "https://github.com/pyeventsourcing/eventsourcing.git", branch = "main", extras = ["crypto"]}
 SQLAlchemy-Utils = ">=0.38.2"
-eventsourcing = "^9.4.6"
+eventsourcing = "^9.5.2"
 sqlalchemy = ">=1.4.26, <2.1"
 
 [tool.poetry.group.dev.dependencies]
@@ -44,7 +43,7 @@ isort = "*"
 mypy = "*"
 pre-commit = "*"
 pre-commit-hooks = "*"
-eventsourcing = { version = "^9.4.6", extras = ["crypto"] }
+eventsourcing = { version = "^9.5.2", extras = ["crypto"] }
 psycopg = { version = "*", extras = ["binary", "pool"] }
 psycopg2-binary = "*"
 pytest = "*"

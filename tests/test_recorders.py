@@ -8,11 +8,13 @@ from eventsourcing.persistence import (
     ProcessRecorder,
     StoredEvent,
     Tracking,
+    TrackingRecorder,
 )
 from eventsourcing.tests.persistence import (
     AggregateRecorderTestCase,
     ApplicationRecorderTestCase,
     ProcessRecorderTestCase,
+    TrackingRecorderTestCase,
     tmpfile_uris,
 )
 from sqlalchemy.future import create_engine
@@ -23,6 +25,7 @@ from eventsourcing_sqlalchemy.recorders import (
     SQLAlchemyAggregateRecorder,
     SQLAlchemyApplicationRecorder,
     SQLAlchemyProcessRecorder,
+    SQLAlchemyTrackingRecorder,
 )
 
 
@@ -87,12 +90,12 @@ class TestSQLAlchemyApplicationRecorder(ApplicationRecorderTestCase):
         self.assertFalse(self.datastore.is_sqlite_wal_mode)
         super().test_insert_select()
 
-    def test_concurrent_no_conflicts(self) -> None:
+    def test_concurrent_no_conflicts(self, initial_position: int = 0) -> None:
         self.assertFalse(self.datastore.is_sqlite_wal_mode)
         self.assertTrue(self.datastore.access_lock)
         self.assertFalse(self.datastore.write_lock)
         self.assertIsInstance(self.datastore.access_lock, Semaphore)
-        super().test_concurrent_no_conflicts()
+        super().test_concurrent_no_conflicts(initial_position=initial_position)
 
     def test_concurrent_no_conflicts_sqlite_filedb(self) -> None:
         uris = tmpfile_uris()
@@ -105,6 +108,19 @@ class TestSQLAlchemyApplicationRecorder(ApplicationRecorderTestCase):
         self.assertIsInstance(self.datastore.write_lock, Semaphore)
         super().test_concurrent_no_conflicts()
         self.assertTrue(self.datastore.is_sqlite_wal_mode)
+
+
+class TestSQLAlchemyTrackingRecorder(TrackingRecorderTestCase):
+    def setUp(self) -> None:
+        self.datastore = SQLAlchemyDatastore(url="sqlite:///:memory:")
+
+    def create_recorder(self) -> TrackingRecorder:
+        recorder = SQLAlchemyTrackingRecorder(
+            datastore=self.datastore,
+            tracking_table_name="tracking",
+        )
+        recorder.create_table()
+        return recorder
 
 
 class TestSQLAlchemyProcessRecorder(ProcessRecorderTestCase):
@@ -170,3 +186,4 @@ class TestSQLAlchemyProcessRecorder(ProcessRecorderTestCase):
 del AggregateRecorderTestCase
 del ApplicationRecorderTestCase
 del ProcessRecorderTestCase
+del TrackingRecorderTestCase
