@@ -430,6 +430,15 @@ class SQLAlchemyTrackingRecorder(SQLAlchemyRecorder, TrackingRecorder):
                 tracking.application_name, tracking.notification_id
             ):
                 raise IntegrityError
+
+        existing = (
+            session.query(self.tracking_record_cls)
+            .filter_by(application_name=str(tracking.application_name))
+            .first()
+        )
+        if existing:
+            existing.notification_id = tracking.notification_id
+        else:
             record = self.tracking_record_cls(
                 application_name=tracking.application_name,
                 notification_id=tracking.notification_id,
