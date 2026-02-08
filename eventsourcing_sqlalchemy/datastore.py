@@ -2,10 +2,13 @@
 from __future__ import annotations
 
 import sqlite3
+from contextlib import contextmanager
 from contextvars import ContextVar, Token
 from threading import Lock, Semaphore
-from typing import Any, Dict, List, Optional, Tuple, Type, TypeVar, Union, cast
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Type, Union, cast
 
+import psycopg
+import psycopg2
 import sqlalchemy.exc
 from eventsourcing.persistence import (
     DatabaseError,
@@ -23,6 +26,7 @@ from sqlalchemy.engine.base import Connection, Engine
 from sqlalchemy.future import create_engine
 from sqlalchemy.orm import Session, scoped_session, sessionmaker
 from sqlalchemy.pool import StaticPool
+from typing_extensions import TypeVar
 
 from eventsourcing_sqlalchemy.models import (  # type: ignore
     EventRecord,
@@ -263,3 +267,30 @@ class SQLAlchemyDatastore:
             )
             cls.record_classes[record_classes_key] = (record_class, base_cls)
         return cast(Type[TEventRecord], record_class)
+
+    @contextmanager
+    def get_connection(self) -> Iterator[Connection]:
+        try:
+            assert self.engine
+            conn = self.engine.connect()
+            yield conn
+        except (psycopg.InterfaceError, psycopg2.InterfaceError) as e:
+            raise InterfaceError(str(e)) from e
+        except (psycopg.OperationalError, psycopg2.OperationalError) as e:
+            raise OperationalError(str(e)) from e
+        except (psycopg.DataError, psycopg2.DataError) as e:
+            raise DataError(str(e)) from e
+        except (psycopg.IntegrityError, psycopg2.IntegrityError) as e:
+            raise IntegrityError(str(e)) from e
+        except (psycopg.InternalError, psycopg2.InternalError) as e:
+            raise InternalError(str(e)) from e
+        except (psycopg.ProgrammingError, psycopg2.ProgrammingError) as e:
+            raise ProgrammingError(str(e)) from e
+        except (psycopg.NotSupportedError, psycopg2.NotSupportedError) as e:
+            raise NotSupportedError(str(e)) from e
+        except (psycopg.DatabaseError, psycopg2.DatabaseError) as e:
+            raise DatabaseError(str(e)) from e
+        except (psycopg.Error, psycopg2.Error) as e:
+            raise PersistenceError(str(e)) from e
+        except Exception:
+            raise
