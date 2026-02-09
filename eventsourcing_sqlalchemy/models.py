@@ -8,6 +8,7 @@ try:
     from sqlalchemy.orm import declarative_base
 except ImportError:
     from sqlalchemy.ext.declarative import declarative_base
+
 from sqlalchemy.orm import Mapped
 from sqlalchemy_utils.types.uuid import UUIDType
 
@@ -87,9 +88,9 @@ class NotificationTrackingRecord(Base):
     __abstract__ = True
 
     # Application name.
-    application_name = Column(String(length=32), primary_key=True)
+    application_name: Mapped[str] = Column(String(length=32), primary_key=True)
 
     # Notification ID.
-    notification_id = Column(
-        BigInteger().with_variant(Integer(), "sqlite"), primary_key=True
+    notification_id: Mapped[int] = Column(
+        BigInteger().with_variant(Integer(), "sqlite")
     )
