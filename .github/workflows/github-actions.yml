@@ -48,7 +48,9 @@ jobs:
           PGPASSWORD=postgres psql eventsourcing_sqlalchemy -c "CREATE SCHEMA myschema AUTHORIZATION eventsourcing" -U postgres -h localhost
 
       - name: Install Microsoft ODBC
-        run: sudo ACCEPT_EULA=Y apt-get install msodbcsql18 -y
+        run: |
+          sudo apt-get update
+          sudo ACCEPT_EULA=Y apt-get install msodbcsql18 -y
 
       - name: Setup MSSQL database
         run: |
