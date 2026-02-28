@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "eventsourcing-sqlalchemy"
-version = "1.0"
+version = "1.0.1"
 description = "Python package for eventsourcing with SQLAlchemy."
 authors = [
     "John Bywater <john.bywater@appropriatesoftware.net>",
